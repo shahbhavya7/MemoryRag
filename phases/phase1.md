@@ -1,54 +1,63 @@
-# Phase 1 — FastAPI + PostgreSQL Skeleton
+# Phase 1 — FastAPI + PostgreSQL Skeleton (Beginner Notes)
 
-Goal of this phase: stand up the smallest possible real backend — one
-database-backed entity (`Project`), full CRUD REST endpoints for it, a health
-check, and proof (a live demo script) that it actually works end to end.
+## What are we even building in this phase?
 
-This file explains **every file that exists in this phase**, **what every
-function in it does and why it's written that way**, and **every terminal
-command that was run to get it working**, including the detours (Docker
-rejected, conda ToS, port conflicts) and why each fix was the right one.
+We're building the smallest possible "real" backend. Not a toy — a backend
+that actually saves data in a real database and lets you Create, Read,
+Update, and Delete it over the internet (this four-letter combo is called
+**CRUD**, and it's the bread and butter of almost every app you've ever used).
+
+The one thing we're storing is called a **Project** — just a name,
+a description, and a timestamp of when it was made. It's intentionally
+boring. The point of Phase 1 isn't the data, it's proving the *plumbing*
+works: app talks to database, database saves things, app can read them back.
+Everything in later phases builds on top of this plumbing.
+
+We also wrote a script (`demo/demo_phase1.py`) that automatically clicks
+through Create → List → Get → Update → Delete → confirm it's really gone,
+so we don't have to trust it blindly — we can *watch* it work.
 
 ---
 
-## 1. Folder structure created in this phase
+## 1. The folder structure, and why it looks like this
 
 ```
 MemoryRag/
 ├── backend/
-│   ├── __init__.py            # makes `backend` an importable Python package
-│   ├── main.py                 # FastAPI app entrypoint
-│   ├── schemas.py              # Pydantic request/response models
+│   ├── __init__.py            # tells Python "this folder is a package"
+│   ├── main.py                 # the front door — starts the app
+│   ├── schemas.py              # the shape of data going in/out over the internet
 │   ├── api/
-│   │   ├── __init__.py
-│   │   └── projects.py         # /projects CRUD routes
+│   │   └── projects.py         # the actual web addresses (routes) for Projects
 │   ├── database/
-│   │   ├── __init__.py
-│   │   └── session.py          # DB engine, session factory, Base class
+│   │   └── session.py          # how we connect to Postgres
 │   └── models/
-│       ├── __init__.py
-│       └── project.py           # SQLAlchemy ORM model for the `projects` table
-├── demo_phase1.py               # scripted CRUD walkthrough against the live API
-├── requirements.txt
-├── .env.example
-├── docker-compose.yml
+│       └── project.py           # describes the "projects" table in the database
+├── demo/
+│   └── demo_phase1.py           # a script that tests everything automatically
+├── requirements.txt             # list of Python packages this project needs
+├── .env.example                 # a template showing what secret settings to fill in
+├── docker-compose.yml           # (optional path) a recipe to run Postgres in a container
 └── README.md
 ```
 
-Why split into `api/` / `database/` / `models/` instead of one big file?
-Each folder has one job — `models` describes tables, `database` describes how
-we talk to Postgres, `api` describes HTTP routes, `schemas.py` describes the
-shape of data crossing the HTTP boundary. This mirrors how real FastAPI
-projects are laid out (and matches the folder structure your `CLAUDE.md`
-already committed to for later phases), so adding Decision/Workflow/Code
-memories later just means adding more files in the same pattern, not
-restructuring.
+**Why so many small files instead of one big file?** Think of it like a
+kitchen: you don't keep the fridge, the stove, and the sink in one drawer.
+Each folder has *one job*:
+- `models/` = "what does a Project look like as a row in the database?"
+- `database/` = "how do we even talk to the database?"
+- `api/` = "what web addresses exist, and what do they do?"
+- `schemas.py` = "what does a Project look like as JSON, over the internet?"
+
+Splitting things up like this means when Phase 5 adds new memory types
+(Decision, Workflow, Code...), we just add more small files following the
+same pattern — we don't have to reorganize everything.
 
 ---
 
-## 2. File-by-file, function-by-function breakdown
+## 2. Going file by file — what's in each one, in plain words
 
-### `backend/database/session.py` — the database connection layer
+### `backend/database/session.py` — "how do we connect to Postgres?"
 
 ```python
 import os
@@ -72,35 +81,41 @@ def get_db():
         db.close()
 ```
 
-- **`DATABASE_URL = os.getenv(...)`** — reads the connection string from the
-  environment, falling back to a sane local default. This is why the task
-  said "read `DATABASE_URL` from env, with a `.env.example`" — hardcoding
-  credentials in source is both a security smell and makes the app
-  un-deployable without editing code. `postgresql+psycopg2://` tells
-  SQLAlchemy which database dialect (`postgresql`) and which driver
-  (`psycopg2`) to use to actually speak to it.
-- **`engine = create_engine(DATABASE_URL)`** — the `engine` is SQLAlchemy's
-  connection pool manager. It doesn't open a connection immediately; it opens
-  one lazily the first time you actually query.
-- **`SessionLocal = sessionmaker(...)`** — a *factory* for `Session` objects.
-  A `Session` is your actual conversation with the database for one unit of
-  work (one request, in our case). `autocommit=False` means nothing is
-  written until you call `.commit()` explicitly — this is what lets us
-  control exactly when a create/update/delete becomes permanent.
-- **`Base = declarative_base()`** — every ORM model (like `Project`) inherits
-  from this. It's the glue that lets SQLAlchemy turn a Python class into a
-  SQL table definition, and later collect all such classes under
-  `Base.metadata` so `create_all()` knows what tables to make.
-- **`def get_db():`** — a *generator function* used as a FastAPI dependency.
-  `yield db` hands the session to whichever endpoint asked for it; execution
-  pauses there for the duration of the request. Once the endpoint function
-  returns, control comes back here and `db.close()` runs in the `finally`
-  block — guaranteeing the connection is released even if the endpoint threw
-  an exception. This "yield, then cleanup after" shape is FastAPI's standard
-  pattern for anything that needs setup + guaranteed teardown per-request
-  (DB sessions, file handles, locks).
+Word-by-word, plain-English:
 
-### `backend/models/project.py` — the ORM model (the table's Python shape)
+- **`os.getenv("DATABASE_URL", "...")`** — "look for a setting named
+  `DATABASE_URL` on this computer (an *environment variable*, which is just a
+  named value your operating system remembers for programs to read). If it's
+  not there, use this fallback address instead." We do this instead of
+  writing the real address directly in the code because (a) passwords
+  shouldn't live in code that gets shared/committed, and (b) it lets the
+  exact same code connect to a different database on a different computer
+  without editing anything.
+- **`postgresql+psycopg2://...`** — this whole string is just an address, like
+  a URL for a website, but for a database. It says: "use Postgres, talk to it
+  using the `psycopg2` translator library, connect as this user, with this
+  password, to this database name."
+- **`engine = create_engine(...)`** — think of the **engine** as a phone line
+  that *can* call the database, but doesn't dial yet. It's set up once and
+  reused for the whole app's life.
+- **`SessionLocal = sessionmaker(...)`** — a **session** is one actual
+  conversation with the database — "hi, save this, now show me that, okay
+  I'm done." `sessionmaker` is a machine that makes a fresh session whenever
+  we ask for one. `autocommit=False` means: nothing we do actually saves
+  permanently until we explicitly say "save it now" (`.commit()`). That's a
+  safety net — half-finished work never accidentally becomes permanent.
+- **`Base = declarative_base()`** — a blank template. Every table we define
+  (like `Project`) will be built by inheriting from this `Base`, which is how
+  SQLAlchemy (the library translating Python ↔ SQL for us) keeps track of
+  "here are all the tables that should exist."
+- **`get_db()`** — this is a little helper that: opens a session, *hands it
+  over* (`yield`) to whoever asked for it, waits for them to finish, then
+  closes it — no matter what (even if something went wrong, the `finally`
+  block guarantees cleanup). FastAPI calls this automatically for every
+  request, so every web request gets its own fresh session and it's always
+  properly closed afterward. You never have to remember to close it yourself.
+
+### `backend/models/project.py` — "what does a Project look like in the database?"
 
 ```python
 from sqlalchemy import Column, DateTime, Integer, String, func
@@ -115,26 +130,34 @@ class Project(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 ```
 
-- **`class Project(Base):`** — inheriting from `Base` registers this class in
-  `Base.metadata`, so SQLAlchemy knows "there should be a table called
-  `projects` with these columns."
-- **`__tablename__ = "projects"`** — the actual SQL table name. Plural by
-  convention.
-- **`id = Column(Integer, primary_key=True, index=True)`** — the primary key.
-  Postgres auto-increments this by default when it's an `Integer` primary
-  key under SQLAlchemy. `index=True` builds a B-tree index for fast lookups
-  by id (which we do constantly — every GET/PUT/DELETE by id uses it).
-- **`name`, `description`** — `nullable=False` on `name` means Postgres will
-  reject any insert without a name at the database level, as a second line of
-  defense under the Pydantic validation in `schemas.py`.
-- **`created_at = Column(DateTime(timezone=True), server_default=func.now(), ...)`**
-  — `server_default=func.now()` means *Postgres itself* stamps the current
-  time on insert (via SQL `now()`), not Python. This is deliberate: it's
-  correct even if multiple app servers with clock drift are inserting rows,
-  and it means we never have to remember to set `created_at` manually when
-  creating a project.
+This is called an **ORM model** (ORM = "Object-Relational Mapping" — a fancy
+name for "a Python class that secretly *is* a database table"). Instead of
+writing raw SQL like `CREATE TABLE projects (...)`, we write a normal-looking
+Python class, and SQLAlchemy turns it into a real table for us.
 
-### `backend/schemas.py` — Pydantic models (the HTTP-facing shape of a Project)
+- **`__tablename__ = "projects"`** — the real name of the table inside
+  Postgres.
+- **`id = Column(Integer, primary_key=True, ...)`** — every row needs a unique
+  ID number to tell it apart from every other row. `primary_key=True` says
+  "this is that unique ID." Postgres will automatically count up 1, 2, 3...
+  for us — we never set it ourselves.
+- **`index=True`** — imagine a phone book with no alphabetical order — you'd
+  have to read every page to find a name. An **index** is like adding that
+  alphabetical order, just for computers, so looking something up by `id`
+  (which we do constantly) is fast instead of scanning the whole table.
+- **`name = Column(String, nullable=False, ...)`** — a text field.
+  `nullable=False` means "this can never be left empty" — Postgres itself
+  will refuse to save a Project with no name, as a backup in case our other
+  checks (in `schemas.py`) somehow get skipped.
+- **`description`** — same idea, but `nullable=True` means it's fine to leave
+  this one empty.
+- **`created_at`** — `server_default=func.now()` means: "Postgres, you fill
+  this in yourself, with the current time, the moment a row is created." We
+  don't set it from Python at all — the database is the single source of
+  truth for "when was this actually saved," which is more trustworthy than
+  trusting every app server's own clock.
+
+### `backend/schemas.py` — "what does a Project look like over the internet?"
 
 ```python
 from datetime import datetime
@@ -156,37 +179,39 @@ class ProjectOut(ProjectBase):
     created_at: datetime
 ```
 
-This is one of the most important concepts in the whole app: **the ORM model
-(`Project`) and the API schema (`ProjectOut` etc.) are deliberately two
-different classes**, even though they look similar. The ORM model describes a
-database row. The Pydantic schema describes JSON going over HTTP. Keeping
-them separate means:
-- Clients can never set `id` or `created_at` on create/update — those fields
-  simply don't exist on `ProjectCreate`/`ProjectUpdate`, so if someone POSTs
-  `{"id": 999, ...}`, Pydantic silently ignores the extra field rather than
-  letting a client fake an id or timestamp.
-- We can reshape what's exposed to clients independently of what's stored,
-  which matters more as memory types get more complex in later phases.
+Here's the single most important idea to take away from this whole file:
+**the database version of a Project (`Project` in `models/`) and the
+internet version of a Project (these classes here) are two separate
+things**, even though they overlap a lot. Why bother separating them?
 
-- **`ProjectBase`** — the fields every variant shares: `name` (required
-  string) and `description` (optional, defaults to `None` via `str | None`).
-- **`ProjectCreate` / `ProjectUpdate`** — currently identical to `ProjectBase`
-  (`pass` means "no changes, just reuse the parent"). They're kept as
-  separate classes on purpose even though they're identical today, because in
-  a real app they usually diverge (e.g., `ProjectUpdate` might make every
-  field optional for partial updates) — having the two names already in place
-  means that future change touches one class, not every endpoint signature.
-- **`ProjectOut`** — what the API sends *back*. Adds `id` and `created_at`,
-  which only exist once a row is actually in the database.
-- **`model_config = ConfigDict(from_attributes=True)`** — this is the part
-  that makes it possible to write `return project` in an endpoint where
-  `project` is a SQLAlchemy `Project` object, not a dict. Normally Pydantic
-  only builds a model from a dict-like object; `from_attributes=True` tells
-  it "also allow reading fields off a plain Python object via attribute
-  access" (i.e. `project.id`, `project.name`, ...), which is exactly what a
-  SQLAlchemy row is.
+Imagine if a client could send `{"id": 999, "name": "hi"}` when creating a
+project, and we just blindly saved whatever they sent. They could fake an ID,
+overwrite someone else's row, or set a fake timestamp. By having a *separate*
+"what am I allowed to send in" shape (`ProjectCreate`) that simply doesn't
+have an `id` or `created_at` field at all, that kind of mistake becomes
+physically impossible — there's no field to put it in.
 
-### `backend/api/projects.py` — the actual CRUD endpoints
+- **`ProjectBase`** — the fields every version shares: a required `name`
+  (must be text) and an optional `description` (`str | None` means "text, or
+  nothing at all", defaulting to nothing).
+- **`ProjectCreate`, `ProjectUpdate`** — what a client is allowed to send us
+  when creating or updating a Project. Right now they're identical to
+  `ProjectBase` (the `pass` keyword just means "nothing extra to add"). We
+  still keep them as separate names because later on they'll likely need to
+  differ (e.g. maybe updates should allow leaving fields out) — and when that
+  day comes, we only change one class instead of hunting through every
+  endpoint.
+- **`ProjectOut`** — what we send *back* to the client. It adds `id` and
+  `created_at`, because those only exist once the database has actually
+  created the row.
+- **`ConfigDict(from_attributes=True)`** — a technical necessity: normally
+  Pydantic (the library validating this JSON shape) expects a dictionary like
+  `{"name": "x"}`. But what we actually have after a database query is a
+  `Project` *object* (`project.name`, not `project["name"]`). This setting
+  tells Pydantic "it's fine, just read the values off the object's
+  attributes instead of expecting a dictionary."
+
+### `backend/api/projects.py` — "what web addresses exist, and what do they do?"
 
 ```python
 from fastapi import APIRouter, Depends, HTTPException
@@ -198,11 +223,11 @@ from backend.schemas import ProjectCreate, ProjectOut, ProjectUpdate
 router = APIRouter(prefix="/projects", tags=["projects"])
 ```
 
-- **`APIRouter(prefix="/projects", tags=["projects"])`** — a mini FastAPI app
-  that only knows about `/projects/...` routes. `prefix` means every route
-  below is automatically mounted under `/projects` (so `@router.get("")` is
-  really `GET /projects`). `tags` is purely cosmetic — it groups these routes
-  under a "projects" heading in the auto-generated `/docs` page.
+A **router** is a mini-collection of related web addresses. `prefix="/projects"`
+means every address we define below automatically starts with `/projects` —
+so we never have to type that part again. `tags=["projects"]` is purely
+cosmetic — it groups these routes together under a "projects" heading on the
+docs page you'll see later.
 
 ```python
 def _get_project_or_404(db: Session, project_id: int) -> Project:
@@ -212,12 +237,12 @@ def _get_project_or_404(db: Session, project_id: int) -> Project:
     return project
 ```
 
-- A private helper (leading underscore = "internal to this module, not part
-  of the public API"). `db.get(Project, project_id)` is SQLAlchemy 2.0's
-  primary-key lookup — equivalent to `SELECT * FROM projects WHERE id = :id`.
-  Raising `HTTPException(404, ...)` here means GET/PUT/DELETE all get
-  identical "not found" behavior for free, instead of repeating the same
-  `if project is None: raise ...` three times.
+A little helper function (the underscore at the front is a Python convention
+meaning "this is just for internal use in this file"). It looks a project up
+by id, and if it doesn't exist, it stops everything and sends back a `404`
+("Not Found") error — the standard web way of saying "that thing doesn't
+exist." Three different endpoints below reuse this instead of repeating the
+same "does it exist?" check three times.
 
 ```python
 @router.post("", response_model=ProjectOut, status_code=201)
@@ -229,49 +254,55 @@ def create_project(payload: ProjectCreate, db: Session = Depends(get_db)):
     return project
 ```
 
-- **`payload: ProjectCreate`** — FastAPI reads the request's JSON body,
-  validates it against `ProjectCreate` (rejecting the request with a 422 if
-  `name` is missing, for instance), and hands you a real Python object. You
-  never manually parse JSON.
-- **`db: Session = Depends(get_db)`** — this is FastAPI's *dependency
-  injection*. `Depends(get_db)` tells FastAPI "before running this endpoint,
-  call `get_db()`, run it up to its `yield`, and pass that value in as `db`."
-  After the endpoint returns, FastAPI resumes `get_db()` past the `yield`,
-  running `db.close()`. Every request gets its own session, and it's always
-  closed — you never have to remember to do it in the endpoint body.
+This function runs whenever someone sends a `POST` request to `/projects`
+(POST = "please create something new"). Breaking it down:
+
+- **`payload: ProjectCreate`** — FastAPI automatically reads the incoming
+  JSON, checks it matches `ProjectCreate` (rejecting it automatically if,
+  say, `name` is missing), and hands it to us as a normal Python object. We
+  never have to manually parse JSON ourselves.
+- **`db: Session = Depends(get_db)`** — this is **dependency injection**, a
+  fancy term for a simple idea: "before running this function, go run
+  `get_db()` for me and hand me the result." FastAPI sees `Depends(get_db)`
+  and knows to call our `get_db()` helper, grab the session it `yield`s, and
+  clean it up afterward automatically — we just get a ready-to-use `db` to
+  play with.
 - **`Project(**payload.model_dump())`** — `payload.model_dump()` turns the
-  Pydantic object into a plain dict (`{"name": ..., "description": ...}`),
-  and `**` unpacks it as keyword arguments into the `Project(...)`
-  constructor. This is why `ProjectCreate` and `Project`'s columns need
-  matching field names.
-- **`db.add(project)`** — stages the new row in the session (nothing hits
-  Postgres yet).
-- **`db.commit()`** — sends the actual `INSERT` and commits the transaction.
-  This is the moment the row becomes real and Postgres assigns `id` and
-  `created_at` (via `server_default=func.now()`).
-- **`db.refresh(project)`** — after commit, the Python object still doesn't
-  know the `id`/`created_at` Postgres generated. `refresh` re-fetches the row
-  from the database into the same object so we can return a complete
-  `ProjectOut` (with a real id and timestamp) in the response.
-- **`status_code=201`** — REST convention: `201 Created` for a successful
-  POST that creates a resource, not `200`.
+  incoming data into a plain dictionary. The `**` in front "unpacks" that
+  dictionary into individual arguments, so this line is really shorthand for
+  `Project(name=payload.name, description=payload.description)`.
+- **`db.add(project)`** — "hey session, remember this new row" — but nothing
+  is saved to Postgres yet.
+- **`db.commit()`** — "okay, actually save it now, for real." This is the
+  moment Postgres creates the row and fills in the auto-generated `id` and
+  `created_at`.
+- **`db.refresh(project)`** — right after `commit()`, our Python object still
+  doesn't know what `id`/`created_at` Postgres just picked. `refresh` goes
+  back and reads those values into our object so we can send a complete
+  answer back to whoever asked.
+- **`status_code=201`** — the standard web status code meaning "created
+  successfully" (as opposed to the generic `200 OK`).
 
 ```python
 @router.get("", response_model=list[ProjectOut])
 def list_projects(db: Session = Depends(get_db)):
     return db.query(Project).order_by(Project.id).all()
 ```
-- `order_by(Project.id)` guarantees a stable, predictable order (`ORDER BY id`
-  in SQL) instead of whatever order Postgres feels like returning rows in.
+
+Runs on `GET /projects` — "give me every project." `order_by(Project.id)`
+just makes sure they always come back in the same predictable order (lowest
+id first) instead of in some random order.
 
 ```python
 @router.get("/{project_id}", response_model=ProjectOut)
 def get_project(project_id: int, db: Session = Depends(get_db)):
     return _get_project_or_404(db, project_id)
 ```
-- `{project_id}` in the path is a *path parameter* — FastAPI extracts it from
-  the URL and, because the function signature types it as `int`, also
-  validates/converts it (a non-numeric id in the URL gets an automatic 422).
+
+Runs on `GET /projects/5` (or whatever number). The `{project_id}` part in
+the address is a placeholder FastAPI fills in automatically and converts to
+a real number for us (if you typed letters instead of a number, FastAPI
+would reject the request automatically, before our code even runs).
 
 ```python
 @router.put("/{project_id}", response_model=ProjectOut)
@@ -283,13 +314,14 @@ def update_project(project_id: int, payload: ProjectUpdate, db: Session = Depend
     db.refresh(project)
     return project
 ```
-- Fetches the existing row (404s if missing), then loops over every field in
-  the incoming payload and uses `setattr` to overwrite it on the live ORM
-  object. SQLAlchemy tracks that the object is "dirty" and generates an
-  `UPDATE` statement on `commit()` — you never write raw SQL for this.
-  (This endpoint does a *full* replace of `name`/`description`, matching
-  `PUT`'s REST semantics — as opposed to `PATCH`, which would do a partial
-  update.)
+
+Runs on `PUT /projects/5` — "replace this project's data." It finds the
+existing row, then for every field in the incoming payload, overwrites that
+field on the object (`setattr` is just Python's way of saying "set this
+attribute to this value" when the attribute name is a variable, not
+hardcoded text). SQLAlchemy quietly notices the object changed and, on
+`commit()`, writes the correct `UPDATE` SQL for us — we never touch SQL
+directly.
 
 ```python
 @router.delete("/{project_id}", status_code=204)
@@ -298,13 +330,12 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
     db.delete(project)
     db.commit()
 ```
-- `status_code=204` = "No Content" — the REST-correct response for a
-  successful delete with nothing to return. Notice there's no `return`
-  statement; FastAPI sends an empty body, which is why the demo script's
-  `show()` helper checks `if response.content:` before calling
-  `.json()` on it.
 
-### `backend/main.py` — the app entrypoint
+Runs on `DELETE /projects/5`. `status_code=204` means "success, and there's
+deliberately nothing to send back" (there's no `return` line — an empty
+response is the correct response for a delete).
+
+### `backend/main.py` — "the front door of the app"
 
 ```python
 from fastapi import FastAPI
@@ -321,28 +352,26 @@ app.include_router(projects_router)
 def health():
     return {"status": "ok"}
 ```
-- **`from backend.models import project  # noqa: F401`** — this import looks
-  unused (nothing in this file calls anything from it), but it's essential:
-  importing the module runs `class Project(Base): ...`, which registers the
-  table on `Base.metadata`. Without this import, `Base.metadata` would be
-  empty and `create_all` would create zero tables. The `# noqa: F401` comment
-  tells linters "yes, I know this import looks unused, don't flag it."
-- **`Base.metadata.create_all(bind=engine)`** — inspects every model
-  registered on `Base` and issues `CREATE TABLE IF NOT EXISTS ...` for any
-  that don't already exist. This runs once at import time (i.e. once per
-  server start), which is why you don't need a separate migration step in
-  Phase 1 — good enough until the schema needs to *change* under existing
-  data, which is what a tool like Alembic would handle in a later phase.
-- **`app.include_router(projects_router)`** — mounts every route defined in
-  `projects.py` onto the main app, under the `/projects` prefix set on the
-  router.
-- **`GET /health`** — the simplest possible liveness check: if this responds
-  200, the process is up and able to serve HTTP. It deliberately does *not*
-  touch the database, so it also tells you "the web server is fine" even if
-  Postgres is having a bad day — useful for load balancers/orchestrators that
-  just want to know "should I send traffic here."
 
-### `demo_phase1.py` — proof the whole stack works
+- **`from backend.models import project  # noqa: F401`** — this looks
+  pointless (we never use anything from it directly in this file) but it's
+  actually critical: just *importing* that file is what runs
+  `class Project(Base): ...`, which is what registers the `projects` table
+  onto `Base`. Skip this import, and `Base` wouldn't know the `projects`
+  table should exist at all. The `# noqa: F401` comment tells code-quality
+  tools "yes, I know this looks like an unused import, that's intentional,
+  don't warn me about it."
+- **`Base.metadata.create_all(bind=engine)`** — "look at every table that's
+  been registered on `Base`, and create any of them in Postgres that don't
+  already exist." This runs once, the moment the app starts.
+- **`app = FastAPI(...)`** — creates the actual application object.
+- **`app.include_router(projects_router)`** — plugs in all the `/projects`
+  addresses we defined earlier.
+- **`GET /health`** — the simplest possible "are you alive?" check. It
+  deliberately doesn't touch the database — it just proves the web server
+  process itself is up and responding.
+
+### `demo/demo_phase1.py` — "proof it all actually works"
 
 ```python
 import sys
@@ -356,175 +385,185 @@ def show(label, response):
     if response.content:
         print(response.json())
 ```
-- Takes the base URL as an optional command-line argument (`sys.argv[1]`) so
-  it can point at any port — this is exactly why we could run it against
-  `http://localhost:8010` when port 8000 turned out to be taken.
-- `show()` is a tiny reporting helper: every step of the demo prints the HTTP
-  method, full URL, status code, and body, so a human reading the terminal
-  output can verify each step visually rather than trusting a silent pass/fail.
+
+- **`sys.argv[1]`** — when you run `python3 demo/demo_phase1.py http://localhost:8010`,
+  everything after the script name is stored in a list called `sys.argv`.
+  `sys.argv[1]` grabs the first extra word you typed — the URL — so the demo
+  can point at whatever address the server is actually running on.
+- **`show(...)`** — just prints out, in a readable way, exactly what request
+  was sent and what came back, so a human can visually check each step
+  instead of trusting the script blindly.
 
 ```python
 def main():
     health = requests.get(f"{BASE_URL}/health"); show(...); health.raise_for_status()
     created = requests.post(f"{BASE_URL}/projects", json={...}); show(...); created.raise_for_status()
     project_id = created.json()["id"]
-    listed = requests.get(f"{BASE_URL}/projects"); ...
-    fetched = requests.get(f"{BASE_URL}/projects/{project_id}"); ...
-    updated = requests.put(f"{BASE_URL}/projects/{project_id}", json={...}); ...
-    deleted = requests.delete(f"{BASE_URL}/projects/{project_id}"); ...
+    ... # list, get, update, delete
     confirm_404 = requests.get(f"{BASE_URL}/projects/{project_id}")
     assert confirm_404.status_code == 404, "Expected 404 after delete"
 ```
-- `raise_for_status()` after every call means the script *stops immediately*
-  with a clear Python traceback the moment any step returns a 4xx/5xx it
-  didn't expect — instead of silently continuing with garbage data.
-- The final `assert` is the one place we *expect* a non-2xx response
-  (404 after delete) — proving the delete actually took effect, not just that
-  the delete call itself succeeded.
-- Extracting `project_id = created.json()["id"]` and reusing it through
-  get/update/delete proves the id round-trips correctly through Postgres
-  (auto-increment → returned in response → usable in subsequent URLs).
 
-### `requirements.txt`, `.env.example`, `docker-compose.yml`
+- **`requests.get/post/put/delete(...)`** — the `requests` library is just a
+  tool for sending web requests from Python, same as a browser or `curl`
+  would.
+- **`.raise_for_status()`** — "if this response was an error (4xx/5xx), stop
+  everything right now and crash loudly." That way if something's actually
+  broken, we find out immediately with a clear error, instead of the script
+  quietly limping along with garbage data.
+- **`assert confirm_404.status_code == 404, "..."`** — this is the one place
+  we *expect* an error response — after deleting, asking for the same
+  project again should fail with 404, proving the delete really worked. If it
+  doesn't, `assert` crashes the script with the message we gave it.
 
-- **`requirements.txt`** pins exact versions (`fastapi==0.115.6`, etc.)
-  rather than ranges, so "works on my machine" also means "works on your
-  machine" — no surprise upgrades.
-- **`.env.example`** documents the one environment variable the app needs
-  (`DATABASE_URL`) without committing real credentials — you copy it to
-  `.env` and fill in your actual values.
-- **`docker-compose.yml`** defines a `postgres:16` service with a named
-  volume (`memoryrag_pgdata`) so data survives container restarts, and a
-  `healthcheck` using `pg_isready` so other tooling can wait for Postgres to
-  actually be ready to accept connections, not just for the container to have
-  started.
+### The other files, quickly
+
+- **`requirements.txt`** — a shopping list of exact Python package versions
+  this project depends on (like `fastapi==0.115.6`). Pinning exact versions
+  means "it works on my machine" also means "it works on your machine" —
+  nobody accidentally gets a newer, possibly-different version.
+- **`.env.example`** — a template file showing what settings (`DATABASE_URL`)
+  the app expects, without containing any real secret values. You copy it to
+  a real `.env` file and fill in the truth.
+- **`docker-compose.yml`** — a recipe file for Docker (a tool that runs
+  software in isolated little boxes called *containers*). This one describes
+  "run Postgres version 16, remember its data even if the container
+  restarts, and know how to check if it's ready." We ended up not using this
+  path this time (see below) but it's kept as an alternative for anyone else
+  who does want Docker.
 
 ---
 
-## 3. Every command run to get this working, and why
+## 3. The commands we actually ran, and why (including the detours)
 
-### Database: why we ended up on Homebrew Postgres instead of Docker
-
-You rejected `docker compose up -d` and asked to install the Postgres version
-needed directly instead. That meant:
+### Getting Postgres running — we chose "install it directly" over Docker
 
 ```bash
 brew install postgresql@16
 ```
-Installs Postgres 16 itself plus its CLI tools (`psql`, `createdb`,
-`pg_isready`, ...) via Homebrew, matching the version pinned in
-`docker-compose.yml` so behavior is consistent either way you run it.
+`brew` is Homebrew, a package manager for macOS (a tool that installs
+programs from the terminal instead of downloading installers by hand). This
+installs Postgres version 16 itself, plus its helper command-line tools
+(`psql` to talk to it directly, `createdb` to make new databases, etc).
 
 ```bash
 brew services start postgresql@16
 ```
-Registers Postgres as a background `launchd` service so it starts now *and*
-automatically on login — the equivalent of `docker-compose`'s `restart:
-unless-stopped`, but for a natively-installed service instead of a container.
+This tells macOS "run Postgres in the background, all the time, and start
+it automatically whenever I log in" — like flipping a permanent light switch
+on, instead of having to manually start Postgres every single time.
 
 ```bash
 createdb memoryrag
 ```
-Postgres doesn't come with your app's database pre-made — `initdb` only
-creates the cluster and a default `postgres` database. `createdb` is a thin
-wrapper around `CREATE DATABASE memoryrag;` that makes the actual database
-our app connects to.
+Installing Postgres gives you the *engine*, but not a database for our app
+specifically. This one command creates an empty database literally named
+`memoryrag` for our app to use.
 
-One consequence worth understanding: Homebrew's `initdb` creates the cluster
-owned by your OS user (`bhavya`), not a `postgres` role, and defaults to
-**trust authentication** for local connections (no password needed at all).
-That's why the working `DATABASE_URL` for local Homebrew Postgres is
-`postgresql+psycopg2://bhavya@localhost:5432/memoryrag` — no
-`postgres:postgres` — whereas the Dockerized Postgres *does* create a
-`postgres` superuser with password `postgres` (because we defined it that way
-in `docker-compose.yml`'s `POSTGRES_USER`/`POSTGRES_PASSWORD`). Same app code,
-two valid connection strings, depending on which Postgres you're pointed at.
+**A quirk worth understanding:** Homebrew's Postgres, by default, trusts your
+Mac's own login user completely for local connections — no password needed.
+So the working address for local Homebrew Postgres is
+`postgresql+psycopg2://bhavya@localhost:5432/memoryrag` (just your username,
+no password). If you instead used the Docker path, `docker-compose.yml`
+creates a *different* user (`postgres`, password `postgres`), because we
+told it to. Same app code works with either — you just need the right
+address in `DATABASE_URL` for whichever Postgres you're actually running.
 
-### Python environment: why conda, and the ToS detour
-
-You asked to use conda instead of a plain venv. `conda env list` showed only
-`base` existed, so:
+### Setting up Python — conda, and a legal-agreement speed bump
 
 ```bash
 conda create -y -n memoryrag python=3.12
 ```
-This failed the first time with a `CondaToSNonInteractiveError` — conda
-now requires you to explicitly accept Anaconda's Terms of Service for its
-default channels (`repo.anaconda.com/pkgs/main` and `/pkgs/r`) before it will
-install anything from them. This is a legal-acceptance step, so I asked
-before running it rather than accepting on your behalf. You chose to accept
-the default channels rather than switching to conda-forge:
+`conda` is a tool for managing isolated Python installations (an
+**environment**) — like giving this one project its own private toolbox of
+Python packages, so it can never clash with some other project's toolbox.
+This creates a new one named `memoryrag`, with Python version 3.12 inside it.
+
+This actually failed the first time, with an error about Anaconda's "Terms
+of Service." Conda now requires you to explicitly agree to some legal terms
+before it'll download packages from its default sources. Since agreeing to
+legal terms is your call, not something to just click through automatically
+for you, I asked first. You chose to accept them:
 
 ```bash
 conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
 conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 ```
 
-Then the env creation succeeded, giving an isolated Python 3.12 install
-separate from `base` — so this project's dependency versions can never clash
-with anything else you have in `base` or elsewhere.
+After that, the environment creation worked.
 
 ```bash
 conda activate memoryrag
 pip install -r requirements.txt
 ```
-Activating switches your shell's `python`/`pip` to point inside the new env;
-`pip install -r requirements.txt` then installs FastAPI, Uvicorn, SQLAlchemy,
-psycopg2, python-dotenv, and requests *into that env only*.
+`conda activate memoryrag` "steps into" that private toolbox — from now on
+in that terminal, `python` and `pip` refer to the ones inside `memoryrag`,
+not your computer's system-wide Python. `pip install -r requirements.txt`
+then installs every package from our shopping list into that toolbox.
 
-### The `python` vs `python3` gotcha
+### A sneaky bug: `python` didn't mean what we thought
 
-Running `python demo_phase1.py` failed with `ModuleNotFoundError: No module
-named 'requests'`, even though `pip show requests` proved it was installed —
-because your shell has `python` **aliased** directly to
-`/usr/local/bin/python3` (visible via `type python` → "python is an alias
-for /usr/local/bin/python3"), which bypasses whatever conda env is active.
-`python3`, by contrast, resolves through `PATH` normally and correctly picked
-up `/opt/miniconda3/envs/memoryrag/bin/python3`. Lesson: after `conda
-activate`, always sanity-check with `which python3` (or `python3 -c "import
-sys; print(sys.executable)"`) if imports mysteriously fail — an alias can
-silently shadow the env you just activated.
+Running `python demo_phase1.py` failed with
+`ModuleNotFoundError: No module named 'requests'` — even though we'd *just*
+installed `requests`. The reason: on this Mac, the word `python` is
+**aliased** (a shortcut set up in the shell) straight to
+`/usr/local/bin/python3`, a totally different Python install, completely
+ignoring whatever conda environment was active. Typing `python3` instead
+worked correctly, because that name wasn't hijacked by the alias and went
+through the normal lookup, landing on the conda environment's own Python.
 
-### Running the server
+**Lesson:** if a package is "definitely installed" but Python still can't
+find it, run `python3 -c "import sys; print(sys.executable)"` (which prints
+exactly which Python program you're actually running) to check you're really
+using the Python you think you are.
+
+### Starting the server — and a second unrelated surprise
 
 ```bash
 uvicorn backend.main:app --host 0.0.0.0 --port 8000
 ```
-first failed with `[Errno 48] address already in use` — `lsof -nP -iTCP:8000
--sTCP:LISTEN` showed an unrelated Python process already listening on 8000.
-Rather than kill a process I didn't start (it might have been your own
-work), we just moved our server to an unused port:
+`uvicorn` is the program that actually runs a FastAPI app and listens for
+web requests. `backend.main:app` tells it exactly where to find our app
+object — "look inside the `backend` package, in the `main` module, for
+something named `app`."
+
+This failed with "address already in use" — something *else* on this Mac was
+already using port 8000 (each running program listening for network
+connections needs to claim a unique "port number," like a numbered mailbox;
+two programs can't share the same one). Rather than shut down a process we
+didn't start (it might have been something you were actively using), we just
+told our server to use a different, free mailbox number instead:
+
 ```bash
 uvicorn backend.main:app --host 0.0.0.0 --port 8010
 ```
-`backend.main:app` tells Uvicorn "import the `main` module inside the
-`backend` package, and run the `app` object inside it" — that `app` is the
-`FastAPI()` instance defined in `backend/main.py`.
 
-### Verifying it
+### Checking it actually works
 
 ```bash
 curl -s http://localhost:8010/health
-python3 demo_phase1.py http://localhost:8010
+python3 demo/demo_phase1.py http://localhost:8010
 ```
-`curl` is a one-shot manual sanity check. The demo script is the thorough
-proof — it's the same lifecycle you'll want to re-run any time you change the
-`Project` model or its endpoints, as a fast regression check before moving to
-Phase 2.
+`curl` sends one single web request from the terminal — a fast manual sanity
+check. The demo script is the real proof — it's worth re-running any time
+you change the `Project` model or its endpoints, as a fast way to catch
+anything you broke, before moving on to the next phase.
 
 ---
 
-## 4. Concepts to walk away from this phase understanding
+## 4. The big ideas to remember from this phase
 
-- **ORM model vs. Pydantic schema** — one describes storage, one describes
-  the wire format. Never assume they must look identical.
-- **Dependency injection via `Depends`** — FastAPI's way of giving every
-  request its own resource (here, a DB session) with guaranteed cleanup.
-- **Session lifecycle**: `add` (stage) → `commit` (persist) → `refresh`
-  (pull generated values back into Python).
-- **REST status code conventions**: `201` on create, `200` on read/update,
-  `204` on delete, `404` when a resource doesn't exist.
-- **Why `create_all` is fine for now but won't be forever** — it can create
-  new tables, but it will never alter an existing table's columns once data
-  exists. A future phase introducing more memory types will likely need a
-  real migration tool (e.g. Alembic).
+- **A database model and an API schema are not the same thing**, even when
+  they look almost identical — one is "what's saved," the other is "what's
+  allowed to travel over the internet."
+- **Dependency injection (`Depends`)** is how FastAPI hands your function
+  ready-made things (like a database session) and cleans them up afterward,
+  without you writing that setup/teardown code yourself every time.
+- **The session lifecycle**: `add` (remember this) → `commit` (actually save
+  it) → `refresh` (pull back anything the database generated, like an id).
+- **Standard status codes**: `201` = created, `200` = normal success,
+  `204` = success with nothing to send back, `404` = doesn't exist.
+- **`create_all()` is a starting-out shortcut, not a forever solution** — it
+  can add brand-new tables, but it will never safely change an *existing*
+  table's columns once real data is sitting in it. A future phase will
+  likely introduce a proper "migration" tool (like Alembic) for that.
