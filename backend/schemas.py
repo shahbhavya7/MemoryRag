@@ -85,3 +85,20 @@ class DocumentSearchResult(BaseModel):
 
 class DocumentSearchResponse(BaseModel):
     results: list[DocumentSearchResult]
+
+
+class ChatRequest(BaseModel):
+    project_id: int
+    message: str
+    top_k: int = 4
+
+
+class ChatSource(BaseModel):
+    text: str
+    score: float
+    source_filename: str
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    sources: list[ChatSource]

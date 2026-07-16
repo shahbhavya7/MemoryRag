@@ -187,3 +187,49 @@ python demo/demo_phase3.py
 ```
 
 It uploads a made-up-topic document (Glimmerwood squirrels) plus an unrelated distractor document (a kite tournament), then runs several search queries — including one that fully paraphrases the source text with no shared keywords — and confirms the relevant squirrel chunk always ranks above the unrelated one, proving the search is genuinely semantic rather than keyword matching.
+
+## Phase 4: Basic RAG chat (LangChain + LLM)
+
+Wires up a simple **RAG** (Retrieval-Augmented Generation) chat: embed the question → retrieve the most relevant chunks *for that project* → build a prompt with those chunks → call an LLM → return the answer plus the sources it was grounded in. No memory routing yet (that's Phase 5+) — this is a single-collection RAG baseline.
+
+### 1. Get an LLM API key
+
+Set an OpenAI-compatible LLM provider via env vars. Two supported out of the box:
+
+- **Groq** (free, fast) — get a key at [console.groq.com/keys](https://console.groq.com/keys)
+- **OpenRouter** — get a key at [openrouter.ai/keys](https://openrouter.ai/keys)
+
+In `.env`:
+
+```bash
+LLM_PROVIDER=groq          # or: openrouter
+LLM_API_KEY=your-real-key
+# LLM_MODEL=...             # optional; sensible per-provider default is used if unset
+```
+
+Both providers expose OpenAI-compatible APIs, so a single LangChain `ChatOpenAI` client handles either — only the base URL and key change.
+
+### New endpoint
+
+| Method | Path    | Auth required | Description                                                  |
+|--------|---------|----------------|--------------------------------------------------------------|
+| POST   | `/chat` | No             | `{project_id, message}` → `{answer, sources: [...]}`         |
+
+Retrieval is scoped to the given `project_id`, so a chat only ever sees that project's own documents. Each exchange (your message + the assistant's answer) is logged to the `messages` table.
+
+### 2. Install the extra dependency
+
+```bash
+pip install -r requirements.txt
+```
+
+This adds `langchain-openai` (the LangChain LLM client + prompt/chain plumbing).
+
+### 3. Run the API and demo
+
+```bash
+./run.sh                       # or: uvicorn backend.main:app --reload
+python demo/demo_phase4.py     # in a second terminal
+```
+
+The demo uploads a short made-up document (the Aurora Tram), asks two questions answerable from it, and prints **both the answer and the exact source chunks used** — so you can see the answer is grounded in the retrieved text. It then asks one question the document *can't* answer, to show the model declines ("I don't know based on the available documents") instead of hallucinating.
