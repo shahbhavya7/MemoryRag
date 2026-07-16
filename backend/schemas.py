@@ -102,3 +102,37 @@ class ChatSource(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     sources: list[ChatSource]
+
+
+class MemoryCreate(BaseModel):
+    memory_type: str  # one of: document, code, decision, workflow, conversation
+    content: str
+    source_ref: str | None = None
+
+
+class MemoryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    memory_type: str
+    content: str
+    source_ref: str | None = None
+    created_at: datetime
+
+
+class MemorySearchRequest(BaseModel):
+    memory_type: str
+    query: str
+    top_k: int = 5
+
+
+class MemorySearchResult(BaseModel):
+    memory_id: int | None = None
+    memory_type: str
+    content: str
+    source_ref: str | None = None
+    score: float
+
+
+class MemorySearchResponse(BaseModel):
+    results: list[MemorySearchResult]

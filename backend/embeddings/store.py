@@ -6,7 +6,20 @@ from pinecone import Pinecone, ServerlessSpec
 
 INDEX_NAME = "memoryrag"
 DIMENSION = 384  # must match BAAI/bge-small-en-v1.5's output size
-NAMESPACE = "documents"
+
+# Phase 5: instead of one "documents" namespace, we keep five memory-type
+# namespaces inside the SAME index. Namespaces isolate vectors from each other
+# for free (no extra index needed, which matters on Pinecone's free tier).
+MEMORY_NAMESPACES = {
+    "document": "document_memory",
+    "code": "code_memory",
+    "decision": "decision_memory",
+    "workflow": "workflow_memory",
+    "conversation": "conversation_memory",
+}
+
+# Uploaded documents (Phase 3/4) live in the document-memory namespace.
+DOCUMENT_NAMESPACE = MEMORY_NAMESPACES["document"]
 
 _pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 
@@ -30,7 +43,15 @@ def _get_index():
     return _pc.Index(INDEX_NAME)
 
 
-def add_chunks(chunks: list[str], embeddings: list[list[float]], project_id: int, source_filename: str) -> int:
+# --- Document chunks (Phase 3/4) -------------------------------------------
+
+def add_chunks(
+    chunks: list[str],
+    embeddings: list[list[float]],
+    project_id: int,
+    source_filename: str,
+    namespace: str = DOCUMENT_NAMESPACE,
+) -> int:
     vectors = [
         {
             "id": str(uuid.uuid4()),
@@ -39,18 +60,23 @@ def add_chunks(chunks: list[str], embeddings: list[list[float]], project_id: int
         }
         for chunk, embedding in zip(chunks, embeddings)
     ]
-    _get_index().upsert(vectors=vectors, namespace=NAMESPACE)
+    _get_index().upsert(vectors=vectors, namespace=namespace)
     return len(vectors)
 
 
-def search(query_embedding: list[float], top_k: int, project_id: int | None = None) -> list[dict]:
+def search(
+    query_embedding: list[float],
+    top_k: int,
+    namespace: str = DOCUMENT_NAMESPACE,
+    project_id: int | None = None,
+) -> list[dict]:
     # When project_id is given, Pinecone only compares against vectors whose
     # metadata matches — so one project's chat can't retrieve another's docs.
     query_filter = {"project_id": project_id} if project_id is not None else None
     result = _get_index().query(
         vector=query_embedding,
         top_k=top_k,
-        namespace=NAMESPACE,
+        namespace=namespace,
         include_metadata=True,
         filter=query_filter,
     )
@@ -62,6 +88,48 @@ def search(query_embedding: list[float], top_k: int, project_id: int | None = No
                 "project_id": match["metadata"]["project_id"],
                 "source_filename": match["metadata"]["source_filename"],
             },
+        }
+        for match in result["matches"]
+    ]
+
+
+# --- Memories (Phase 5) ----------------------------------------------------
+
+def add_memory_vector(
+    namespace: str,
+    embedding: list[float],
+    memory_id: int,
+    memory_type: str,
+    content: str,
+    source_ref: str | None,
+) -> str:
+    # Pinecone metadata can't hold null values, so only include source_ref when set.
+    metadata = {"memory_id": memory_id, "memory_type": memory_type, "content": content}
+    if source_ref is not None:
+        metadata["source_ref"] = source_ref
+
+    vector_id = str(uuid.uuid4())
+    _get_index().upsert(
+        vectors=[{"id": vector_id, "values": embedding, "metadata": metadata}],
+        namespace=namespace,
+    )
+    return vector_id
+
+
+def search_memories(namespace: str, query_embedding: list[float], top_k: int) -> list[dict]:
+    result = _get_index().query(
+        vector=query_embedding,
+        top_k=top_k,
+        namespace=namespace,
+        include_metadata=True,
+    )
+    return [
+        {
+            "memory_id": match["metadata"].get("memory_id"),
+            "memory_type": match["metadata"]["memory_type"],
+            "content": match["metadata"]["content"],
+            "source_ref": match["metadata"].get("source_ref"),
+            "score": match["score"],
         }
         for match in result["matches"]
     ]

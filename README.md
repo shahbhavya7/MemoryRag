@@ -233,3 +233,36 @@ python demo/demo_phase4.py     # in a second terminal
 ```
 
 The demo uploads a short made-up document (the Aurora Tram), asks two questions answerable from it, and prints **both the answer and the exact source chunks used** — so you can see the answer is grounded in the retrieved text. It then asks one question the document *can't* answer, to show the model declines ("I don't know based on the available documents") instead of hallucinating.
+
+## Phase 5: Multi-memory split (five memory types)
+
+Splits the single vector store into **five isolated memory types**, each in its own Pinecone namespace within the same `memoryrag` index:
+
+| Memory type    | Namespace              | Holds |
+|----------------|------------------------|-------|
+| `document`     | `document_memory`      | PDFs, docs, notes, wiki pages |
+| `code`         | `code_memory`          | functions, classes, APIs, READMEs |
+| `decision`     | `decision_memory`      | structured engineering decisions |
+| `workflow`     | `workflow_memory`      | processes / step-by-step flows |
+| `conversation` | `conversation_memory`  | important discussions worth keeping |
+
+Using **namespaces within one index** (rather than five separate indexes) keeps everything on Pinecone's free tier while still isolating each type's vectors completely. Two new Postgres tables track things relationally: `memory_types` (the five reference rows, auto-seeded on startup) and `memories` (each stored entry, linked to its type and to its Pinecone `vector_id`).
+
+There's no memory *routing* yet — you say which type to write/search explicitly. Automatic routing ("which memory should answer this?") is Phase 6.
+
+### New endpoints
+
+| Method | Path               | Description                                                         |
+|--------|--------------------|---------------------------------------------------------------------|
+| POST   | `/memories`        | `{memory_type, content, source_ref}` → embeds into that type's namespace + logs in Postgres |
+| POST   | `/memories/search` | `{memory_type, query, top_k}` → searches **only** that type's namespace |
+
+### Seed + prove isolation
+
+```bash
+./run.sh                          # start the API (memory_types auto-seed on startup)
+python demo/seed_phase5.py        # optional: seed 2-3 example entries per type
+python demo/demo_phase5.py        # seeds its own entries, then proves isolation
+```
+
+`demo_phase5.py` runs a 5×5 matrix: it searches *every* namespace with *every* type's query and confirms each namespace only ever returns its own type — even when the query semantically matches a different type's content. That proves the types are structurally isolated, not merely labeled.
