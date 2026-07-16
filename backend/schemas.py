@@ -65,3 +65,23 @@ class ChatOut(ChatBase):
     project_id: int
     user_id: int
     created_at: datetime
+
+
+class DocumentUploadOut(BaseModel):
+    source_filename: str
+    chunks_created: int
+
+
+class DocumentSearchRequest(BaseModel):
+    query: str
+    top_k: int = 5
+
+
+class DocumentSearchResult(BaseModel):
+    text: str
+    score: float
+    metadata: dict
+
+
+class DocumentSearchResponse(BaseModel):
+    results: list[DocumentSearchResult]

@@ -21,7 +21,8 @@ createdb memoryrag
 ```
 
 Homebrew's Postgres uses trust auth for your OS user, so `DATABASE_URL` becomes
-`postgresql+psycopg2://<your-username>@localhost:5432/memoryrag` (no password).
+`export DATABASE_URL="postgresql+psycopg2://bhavya@localhost:5432/memoryrag"` (no password).
+`export SECRET_KEY="dev-secret-please-change-me"`
 
 ### 2. Install dependencies
 
@@ -122,3 +123,67 @@ python demo/demo_phase2.py
 ```
 
 It registers a throwaway user, logs in, creates a project, creates a chat under that project, lists chats, and finally confirms that calling `/projects` with no token returns `401`.
+
+## Phase 3: Embeddings + vector search (Pinecone)
+
+Adds semantic document search: upload text, it gets chunked and embedded, and you can search it by meaning instead of exact keywords. Vectors are stored in **Pinecone**, a hosted/serverless vector database — no local vector store, no docker-compose changes.
+
+### 1. Get a free Pinecone API key
+
+Sign up for a free account at [pinecone.io](https://www.pinecone.io) (the free "Starter" plan is enough for this project) and copy your API key.
+
+Copy `.env.example` to `.env` and fill in `PINECONE_API_KEY`:
+
+```bash
+cp .env.example .env
+```
+
+Then export it before running the server (the app reads from the environment, not from `.env` directly):
+
+```bash
+export PINECONE_API_KEY="your-real-key-here"
+```
+
+### 2. Index creation (automatic, one-time)
+
+On startup, the app checks whether a serverless index named `memoryrag` (dimension 384, to match `BAAI/bge-small-en-v1.5`; metric `cosine`) already exists in your Pinecone account, and creates it if not. This check is guarded — it's safe to restart the app any number of times; the index is only ever created once and reused on every later run.
+
+We'll use additional **namespaces** within this same index (not separate indexes) for the other memory types added in Phase 5 — keeping everything on one index is important because Pinecone's free tier caps how many serverless indexes you can have, but namespaces within an index are effectively free and keep each memory type's vectors isolated from the others.
+
+The first request that touches embeddings (upload or search) will also download the `BAAI/bge-small-en-v1.5` model (~130MB) from Hugging Face and cache it under `~/.cache/huggingface`. That first request will be noticeably slower; every request after that is fast.
+
+### New endpoints
+
+| Method | Path                | Auth required | Description                                                       |
+|--------|---------------------|----------------|---------------------------------------------------------------------|
+| POST   | `/documents/upload` | No             | Upload raw `text` or a `file` (multipart form), chunked + embedded |
+| POST   | `/documents/search`  | No            | `{query, top_k}` — returns the most semantically similar chunks     |
+
+`/documents/upload` takes multipart form fields: `project_id` (int), and either `text` (string) or `file` (a text file upload) — not both.
+
+Search results' `score` is Pinecone's cosine similarity: **higher means more similar** (this is the opposite convention from a "distance," where lower would mean closer).
+
+### 3. Install the extra dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+This adds `pinecone` (hosted vector database client), `sentence-transformers` (embedding model), and `python-multipart` (needed for file uploads in FastAPI).
+
+### 4. Run the API
+
+```bash
+export DATABASE_URL="postgresql+psycopg2://<your-username>@localhost:5432/memoryrag"
+export SECRET_KEY="some-long-random-string"
+export PINECONE_API_KEY="your-real-key-here"
+uvicorn backend.main:app --reload
+```
+
+### 5. Run the demo
+
+```bash
+python demo/demo_phase3.py
+```
+
+It uploads a made-up-topic document (Glimmerwood squirrels) plus an unrelated distractor document (a kite tournament), then runs several search queries — including one that fully paraphrases the source text with no shared keywords — and confirms the relevant squirrel chunk always ranks above the unrelated one, proving the search is genuinely semantic rather than keyword matching.
