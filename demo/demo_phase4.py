@@ -64,12 +64,18 @@ def ask(question: str) -> None:
     result.raise_for_status()
     body = result.json()
     print(f"\nANSWER:\n{body['answer']}")
+    # Note: as of Phase 6, /chat routes via memory types, so the response also
+    # reports which memory type(s) it picked. This Phase 4 demo still works
+    # against that newer shape.
+    if body.get("memory_types"):
+        print(f"\nROUTED TO MEMORY TYPE(S): {body['memory_types']}")
     print("\nSOURCES THE ANSWER WAS GROUNDED IN:")
     if not body["sources"]:
         print("  (none retrieved)")
     for i, src in enumerate(body["sources"], 1):
         snippet = src["text"][:160].replace("\n", " ")
-        print(f"  [{i}] score={src['score']:.3f} from {src['source_filename']}: {snippet}...")
+        ref = src.get("source_ref") or src.get("memory_type") or "?"
+        print(f"  [{i}] score={src['score']:.3f} from {ref}: {snippet}...")
 
 
 def main() -> None:

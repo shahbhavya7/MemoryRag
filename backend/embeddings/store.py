@@ -116,6 +116,29 @@ def add_memory_vector(
     return vector_id
 
 
+def search_namespace(namespace: str, query_embedding: list[float], top_k: int) -> list[dict]:
+    # Generic search used by the Phase 6 routing graph. A namespace can hold
+    # both document chunks (metadata key "chunk_text") and memory entries
+    # (key "content"), so we read whichever text key is present.
+    result = _get_index().query(
+        vector=query_embedding,
+        top_k=top_k,
+        namespace=namespace,
+        include_metadata=True,
+    )
+    out = []
+    for match in result["matches"]:
+        md = match["metadata"]
+        out.append(
+            {
+                "text": md.get("content") or md.get("chunk_text") or "",
+                "score": match["score"],
+                "source_ref": md.get("source_ref") or md.get("source_filename"),
+            }
+        )
+    return out
+
+
 def search_memories(namespace: str, query_embedding: list[float], top_k: int) -> list[dict]:
     result = _get_index().query(
         vector=query_embedding,

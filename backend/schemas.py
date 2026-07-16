@@ -96,12 +96,15 @@ class ChatRequest(BaseModel):
 class ChatSource(BaseModel):
     text: str
     score: float
-    source_filename: str
+    memory_type: str | None = None
+    source_ref: str | None = None
 
 
 class ChatResponse(BaseModel):
     answer: str
+    memory_types: list[str]  # which memory type(s) the router picked (the Phase 6 proof point)
     sources: list[ChatSource]
+    memory_update: dict | None = None
 
 
 class MemoryCreate(BaseModel):
