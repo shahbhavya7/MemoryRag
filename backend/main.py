@@ -5,6 +5,7 @@ from backend.api.chat import router as chat_router
 from backend.api.chats import router as chats_router
 from backend.api.context_trace import router as context_trace_router
 from backend.api.documents import router as documents_router
+from backend.api.ingest import router as ingest_router
 from backend.api.memories import router as memories_router
 from backend.api.projects import router as projects_router
 from backend.database.session import Base, SessionLocal, engine
@@ -31,6 +32,7 @@ app.include_router(documents_router)
 app.include_router(chat_router)
 app.include_router(memories_router)
 app.include_router(context_trace_router)
+app.include_router(ingest_router)
 
 
 @app.get("/health")

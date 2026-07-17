@@ -14,3 +14,4 @@ sentence-transformers==3.3.1
 langchain-openai==0.3.35
 langgraph==0.2.76
 tiktoken==0.13.0
+gitpython==3.1.43

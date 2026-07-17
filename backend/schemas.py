@@ -166,3 +166,27 @@ class MemorySearchResult(BaseModel):
 
 class MemorySearchResponse(BaseModel):
     results: list[MemorySearchResult]
+
+
+class GitIngestRequest(BaseModel):
+    repo_path: str  # path to a local git repo on the server's filesystem
+    max_commits: int | None = None  # only ingest the N most recent commits
+    branch: str | None = None  # ref to walk (default: current branch)
+
+
+class GitCommitIngested(BaseModel):
+    sha: str
+    short_sha: str
+    subject: str
+    files_changed: int
+    code_chunks: int
+    stored_as_decision: bool
+
+
+class GitIngestResponse(BaseModel):
+    repo_path: str
+    branch: str | None = None
+    commits_processed: int
+    code_chunks_stored: int
+    decision_entries_stored: int
+    commits: list[GitCommitIngested]

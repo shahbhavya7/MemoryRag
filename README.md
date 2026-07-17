@@ -323,3 +323,33 @@ python demo/eval_phase7.py
 ```
 
 `eval_phase7.py` runs 10 hand-labeled `question → expected memory type` pairs through the router and prints **routing accuracy** — for *both* prompt versions, so you can see as a number whether a prompt change actually helped. This is the project's first real retrieval-quality metric. (Routing uses an LLM classifier, so exact numbers vary slightly run to run.)
+
+## Phase 8: Git integration → Code Memory
+
+Real **commit history** becomes searchable memory. Point MemoryRAG at a local git repo; it walks the commit log, turns each commit (message + a capped diff) into text, embeds it, and stores it in **code memory** — and additionally in **decision memory** when the commit message reads like it explains a *why* (e.g. "we switched to X because…"). Every entry's `source_ref` is the **commit hash**, so an answer can cite the exact commit(s) it came from.
+
+Built with **GitPython**. The storage path is the same shared `store_memory` writer from Phase 5 — Phase 8 only adds a new *source* of memories.
+
+### New endpoint
+
+| Method | Path          | Description |
+|--------|---------------|-------------|
+| POST   | `/ingest/git` | `{repo_path, max_commits?, branch?}` → walks the repo's commits into code (+ decision) memory; returns a per-commit summary. Bad path → clear 400. |
+
+### CLI (same logic, no server)
+
+```bash
+set -a; source .env; set +a
+python -m backend.services.git_ingest <repo_path> [--max-commits N] [--branch NAME]
+```
+
+### Demo
+
+```bash
+./run.sh                              # start the API
+python demo/demo_phase8.py http://localhost:8010
+```
+
+`demo_phase8.py` ingests **this project's own git history**, then asks a few "what changed…" / "what was done…" questions and prints each answer **plus the commit hash(es) it cited**.
+
+> ⚠️ Git diff chunks are large (~800 tokens each). For grounded answers, run with a healthy `CONTEXT_TOKEN_BUDGET` (e.g. `1500`–`2000`). With a tiny budget a whole commit won't fit the context slice, and answers fall back to "I don't know" — that's the Phase 7 token budget doing its job, not a Phase 8 bug.
