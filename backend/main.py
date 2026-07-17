@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.auth import router as auth_router
 from backend.api.chat import router as chat_router
@@ -24,6 +25,22 @@ finally:
     _db.close()
 
 app = FastAPI(title="MemoryRAG API", version="0.1.0")
+
+# Phase 9: allow the Vite dev server (the React frontend) to call this API from
+# the browser. Without this, the browser blocks every cross-origin request.
+app.add_middleware(
+    CORSMiddleware,
+    # 5173 is Vite's default; it auto-increments (5174/5175) if that port is
+    # busy, so allow a small range to avoid a surprise CORS block.
+    allow_origins=[
+        origin
+        for port in (5173, 5174, 5175)
+        for origin in (f"http://localhost:{port}", f"http://127.0.0.1:{port}")
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth_router)
 app.include_router(projects_router)

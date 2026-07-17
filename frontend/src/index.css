@@ -1,0 +1,370 @@
+/* ============================================================================
+   MemoryRAG — Liquid-glass design system (Phase 9-design)
+
+   ONE source of truth for the glass look. Every surface uses the `.glass`
+   primitive (via the <GlassPanel> component) so radius/blur/border/shadow are
+   identical everywhere. Design tokens live in :root and are mirrored into
+   Tailwind's theme so utilities like `text-fg` / `bg-accent` work too.
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+/* --- Tailwind theme tokens (so `font-sans`, `text-accent`, etc. exist) --- */
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-accent: #3b82f6; /* primary — blue */
+  --color-accent-2: #22d3ee; /* secondary — cyan */
+  --color-fg: #f2f3f8;
+  --color-fg-muted: #c3c9d8;
+  --color-fg-faint: #8b92a6;
+  --color-bg-base: #07080f;
+
+  /* Per-memory-type accent tints (restrained; used only for badges). */
+  --color-mt-document: #38bdf8;
+  --color-mt-code: #34d399;
+  --color-mt-decision: #fbbf24;
+  --color-mt-workflow: #a78bfa;
+  --color-mt-conversation: #f472b6;
+
+  --radius-glass: 20px;
+}
+
+/* --- Raw CSS variables (the single source of truth for glass) --- */
+:root {
+  --bg-base: #060a12; /* deep blue-black, not neutral — reads as "cool" */
+
+  --fg: #eef4fb; /* body text — near-white, faint cool cast, never gray-on-glass */
+  --fg-muted: #b8c4d6; /* secondary labels — still AA on our dark glass */
+  --fg-faint: #7f8ba1; /* decorative only, never body copy */
+
+  --accent: #3b82f6; /* blue */
+  --accent-2: #22d3ee; /* cyan */
+  --danger: #fb7185;
+  --ok: #34d399;
+
+  /* THE glass recipe — change here, changes everywhere.
+     Cool-tinted: the sheen and top edge carry a faint cyan cast so the glass
+     reads as its own thing, not generic frosted white. */
+  --glass-blur: 22px;
+  --glass-radius: 20px;
+  --glass-base: rgba(13, 20, 33, 0.46); /* dark blue translucent body => readable text */
+  --glass-sheen: linear-gradient(
+    135deg,
+    rgba(120, 220, 255, 0.14),
+    rgba(255, 255, 255, 0.04) 40%,
+    rgba(59, 130, 246, 0.05) 100%
+  ); /* diagonal cool frost, cyan -> faint blue */
+  --glass-border: rgba(150, 210, 255, 0.16); /* cool hairline */
+  --glass-shadow: 0 10px 36px rgba(2, 8, 20, 0.5);
+  /* light top edge + a faint cyan rim light = the signature "specular" edge */
+  --glass-inset: inset 0 1px 0 rgba(190, 240, 255, 0.24), inset 0 0 0 1px rgba(80, 180, 255, 0.04);
+
+  /* Memory-type accents (mirror of the @theme values, for plain CSS use). */
+  --mt-document: #38bdf8;
+  --mt-code: #34d399;
+  --mt-decision: #fbbf24;
+  --mt-workflow: #a78bfa;
+  --mt-conversation: #f472b6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--fg);
+  font-family: var(--font-sans, "Inter", system-ui, sans-serif);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* --- Type scale --- */
+h1 {
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0;
+}
+h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.text-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-muted);
+}
+/* Signature cyan->blue wordmark. Brand accent only, not body text. */
+.brand-gradient {
+  background: linear-gradient(100deg, var(--accent-2), var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+a {
+  color: color-mix(in srgb, var(--accent) 70%, white);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================================
+   The glass primitive — the ONLY place backdrop-filter is defined.
+   ========================================================================== */
+.glass {
+  position: relative;
+  background-color: var(--glass-base);
+  background-image: var(--glass-sheen);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  box-shadow: var(--glass-shadow), var(--glass-inset);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+}
+
+/* A denser variant for text-heavy panels — extra contrast insurance. */
+.glass-strong {
+  --glass-base: rgba(15, 17, 28, 0.62);
+}
+
+/* Fallback: no backdrop-filter support => opaque-ish panel so text stays
+   readable instead of see-through. */
+@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+  .glass {
+    background-color: rgba(15, 17, 28, 0.94);
+  }
+  .glass-strong {
+    background-color: rgba(13, 15, 24, 0.97);
+  }
+}
+
+/* ============================================================================
+   Ambient animated background — the "something behind the glass to blur".
+   A dark base + a few slowly drifting blurred color blobs (the one allowed
+   infinite loop). This is regular blur on colored shapes, NOT backdrop-filter.
+   ========================================================================== */
+.bg-aurora {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 800px at 12% -10%, rgba(34, 211, 238, 0.12), transparent 60%),
+    radial-gradient(1100px 750px at 112% 18%, rgba(59, 130, 246, 0.12), transparent 55%),
+    radial-gradient(900px 900px at 50% 120%, rgba(8, 145, 178, 0.10), transparent 55%),
+    linear-gradient(160deg, #071223 0%, var(--bg-base) 55%);
+}
+/* Fine grain so the backdrop never looks like a flat fill (premium, subtle). */
+.bg-aurora::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+.bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.5;
+  will-change: transform;
+}
+.bg-blob.b1 {
+  width: 46vw;
+  height: 46vw;
+  left: -8vw;
+  top: -10vw;
+  background: radial-gradient(circle at 30% 30%, #22d3ee, transparent 70%);
+  animation: drift1 26s ease-in-out infinite alternate;
+}
+.bg-blob.b2 {
+  width: 42vw;
+  height: 42vw;
+  right: -6vw;
+  top: 6vh;
+  background: radial-gradient(circle at 60% 40%, #3b82f6, transparent 70%);
+  animation: drift2 32s ease-in-out infinite alternate;
+}
+.bg-blob.b3 {
+  width: 38vw;
+  height: 38vw;
+  left: 32vw;
+  bottom: -16vw;
+  background: radial-gradient(circle at 50% 50%, #0ea5e9, transparent 70%);
+  opacity: 0.42;
+  animation: drift3 38s ease-in-out infinite alternate;
+}
+
+@keyframes drift1 {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(6vw, 5vh) scale(1.12); }
+}
+@keyframes drift2 {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(-5vw, 6vh) scale(1.08); }
+}
+@keyframes drift3 {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(4vw, -5vh) scale(1.15); }
+}
+
+/* ============================================================================
+   Forms & controls (styled to sit on glass, readable).
+   ========================================================================== */
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--fg);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 10px 12px;
+  width: 100%;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--fg-faint);
+}
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent-2) 70%, transparent);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.22);
+  background: rgba(255, 255, 255, 0.09);
+}
+select option {
+  background: #14161f; /* dropdown list needs a solid bg */
+  color: var(--fg);
+}
+
+.field-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--fg-muted);
+  margin: 14px 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+button {
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--fg);
+  padding: 9px 15px;
+  border-radius: 12px;
+  transition: background 0.18s, border-color 0.18s, transform 0.1s;
+}
+button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+}
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+button.primary {
+  background: linear-gradient(135deg, var(--accent-2), var(--accent)); /* cyan -> blue */
+  border-color: transparent;
+  color: #041018;
+  font-weight: 600;
+  box-shadow: 0 6px 22px rgba(34, 150, 230, 0.4);
+}
+button.primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+button.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--fg-muted);
+  padding: 7px 11px;
+}
+button.ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--fg);
+}
+
+/* --- Glass shimmer (loading state; no spinner-on-white) --- */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(140, 210, 255, 0.10),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* --- Scrollbars (dark) --- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ============================================================================
+   Motion guardrail: honour prefers-reduced-motion — kill ambient drift and
+   any non-essential animation/transition.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .bg-blob {
+    animation: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
