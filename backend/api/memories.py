@@ -5,7 +5,7 @@ from backend.database.session import get_db
 from backend.embeddings.model import embed_query
 from backend.embeddings.store import search_memories
 from backend.memory_writer import store_memory
-from backend.models.memory import MemoryType
+from backend.models.memory import Memory, MemoryType
 from backend.schemas import (
     MemoryCreate,
     MemoryOut,
@@ -40,6 +40,31 @@ def create_memory(payload: MemoryCreate, db: Session = Depends(get_db)):
         source_ref=memory.source_ref,
         created_at=memory.created_at,
     )
+
+
+@router.get("", response_model=list[MemoryOut])
+def list_memories(memory_type: str | None = None, db: Session = Depends(get_db)):
+    # Browse stored memories (Phase 9c Memories page), newest first, optionally
+    # filtered to one type. Joins MemoryType to return the type NAME (the table
+    # only stores memory_type_id).
+    query = (
+        db.query(Memory, MemoryType.name)
+        .join(MemoryType, Memory.memory_type_id == MemoryType.id)
+        .order_by(Memory.created_at.desc())
+    )
+    if memory_type:
+        _get_memory_type_or_400(db, memory_type)  # 400 on an unknown type name
+        query = query.filter(MemoryType.name == memory_type)
+    return [
+        MemoryOut(
+            id=memory.id,
+            memory_type=type_name,
+            content=memory.content,
+            source_ref=memory.source_ref,
+            created_at=memory.created_at,
+        )
+        for memory, type_name in query.all()
+    ]
 
 
 @router.post("/search", response_model=MemorySearchResponse)

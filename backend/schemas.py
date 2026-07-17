@@ -190,3 +190,26 @@ class GitIngestResponse(BaseModel):
     code_chunks_stored: int
     decision_entries_stored: int
     commits: list[GitCommitIngested]
+
+
+class EvalQuestionResult(BaseModel):
+    question: str
+    expected: str
+    predicted: list[str]
+    correct: bool
+
+
+class EvalPerType(BaseModel):
+    memory_type: str
+    total: int
+    correct: int
+    accuracy: float
+
+
+class EvalResponse(BaseModel):
+    version: str
+    total: int
+    correct: int
+    accuracy: float
+    per_type: list[EvalPerType]
+    results: list[EvalQuestionResult]

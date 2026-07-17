@@ -8,9 +8,10 @@ what context an answer was built from.
 Built phase-by-phase:
 
 - **9a** — scaffold, JWT auth (login/register), protected app shell, project selector ✅
-- **9b** — Chat page + routing-transparency panel
-- **9c** — Memories browser + Upload page
-- **9d** — Evaluation dashboard
+- **9-design** — liquid-glass design system (cyan→blue) — see [DESIGN.md](DESIGN.md) ✅
+- **9b** — Chat page + routing-transparency panel ✅
+- **9c** — Memories browser + Upload page ✅
+- **9d** — Evaluation dashboard ✅
 
 ## Prerequisites
 
@@ -56,6 +57,19 @@ src/
 ├── api/           # fetch wrapper (attaches the Bearer token) + shared types
 ├── auth/          # AuthContext — token/email in memory, login/register/logout
 ├── project/       # ProjectContext — project list + current selection
-├── components/    # AppShell, ProtectedRoute, ProjectSelector
-└── pages/         # Login, Register, and the four feature pages
+├── lib/           # memoryTypes — per-type label/color/emoji (matches CSS tokens)
+├── components/    # GlassPanel, Background, AppShell, MemoryBadge, RoutingTransparency, Toast, …
+└── pages/         # Login, Register, Chat, Memories, Upload, Evaluation
 ```
+
+## Seeing it populated
+
+The Chat and Memories pages need data. With the backend running, seed the five
+memory types:
+
+```bash
+python demo/seed_phase6.py http://localhost:8010
+```
+
+Then the Chat suggestions return grounded answers, and the Memories browser has
+cards to filter. Keep `CONTEXT_TOKEN_BUDGET` ~1500 for grounded chat answers.

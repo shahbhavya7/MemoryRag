@@ -71,3 +71,41 @@ export interface ContextTrace {
   dropped_count: number;
   retrieved: RetrievedItemTrace[];
 }
+
+// --- Memories (Phase 5 / 9c) ---
+export interface Memory {
+  id: number;
+  memory_type: string;
+  content: string;
+  source_ref: string | null;
+  created_at: string;
+}
+
+export interface DocumentUploadResult {
+  source_filename: string;
+  chunks_created: number;
+}
+
+// --- Evaluation (Phase 7 / 9d) ---
+export interface EvalQuestionResult {
+  question: string;
+  expected: string;
+  predicted: string[];
+  correct: boolean;
+}
+
+export interface EvalPerType {
+  memory_type: string;
+  total: number;
+  correct: number;
+  accuracy: number;
+}
+
+export interface EvalResponse {
+  version: string;
+  total: number;
+  correct: number;
+  accuracy: number;
+  per_type: EvalPerType[];
+  results: EvalQuestionResult[];
+}

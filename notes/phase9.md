@@ -17,8 +17,8 @@ before adding the next**:
 - **9a** — scaffold + login/register + app shell + project selector ✅
 - **9-design** — liquid-glass design system + restyle the shell ✅
 - **9b** — Chat page + routing transparency ✅
-- **9c** — Memories browser + Upload
-- **9d** — Evaluation dashboard
+- **9c** — Memories browser + Upload ✅
+- **9d** — Evaluation dashboard ✅
 
 ---
 
@@ -211,6 +211,82 @@ That *is* the point of the page, and it works.
 memory it used and what it kept — 9b just surfaces it so a human sees the routing
 and context engineering at a glance instead of reading JSON. A colored, animated
 badge does more to explain "adaptive memory routing" than a paragraph could.
+
+---
+
+## 9c — Memories Browser + Upload ✅
+
+### What we made
+
+Two pages: **Upload** (add a typed memory, or upload a text document) and
+**Memories** (browse everything stored, filter by type). Plus a new backend
+`GET /memories` list endpoint to feed the browser.
+
+### New words, super simply
+
+- **Toast** — a little pop-in notification that fades away by itself. We use
+  glass ones instead of the browser's ugly `alert()` box.
+- **Layout animation** — Framer Motion smoothly slides cards to their new spots
+  when the list changes (e.g. when you filter). You just add a `layout` prop.
+- **FormData** — how a file gets uploaded from the browser.
+
+### The story + the smart call
+
+Upload has two glass forms; saving shows a green toast, failing shows a red one.
+Memories shows a grid of cards you can filter by type, and the cards **animate**
+into their new positions when you filter.
+
+The smart decision: a grid can have lots of cards, and real glass blur is
+expensive. So grid cards use a **`lite` glass** — same frosted *look*, but no
+blur — while big single panels keep the real blur. That's how you keep a glass
+UI smooth instead of laggy. (Our own guardrail: blur only on a few large
+panels.)
+
+### How we proved it
+
+Listed memories (grouped by type), filtered to just decisions, created a new
+decision (201), and uploaded a text doc (201, 1 chunk) — all through the exact
+endpoints the pages call. A bad filter type correctly returned 400.
+
+---
+
+## 9d — Evaluation Dashboard ✅
+
+### What we made
+
+A page that **scores the router** on demand and shows it beautifully: click
+**Run evaluation** → the backend runs the Phase 7 gold set through the classifier
+and returns accuracy; the page animates a big **count-up** percentage, grows a
+**bar per memory type**, and lists every question with any **misroute
+highlighted**.
+
+### New words, super simply
+
+- **On-demand** — it only runs when you click the button (it costs real LLM
+  calls), not automatically.
+- **Count-up** — the headline number animates from 0 up to its value.
+- **Gold set** — the fixed list of questions with known-right answers; accuracy
+  is how many the router got right.
+
+### The story
+
+We put the gold set in one shared file (`backend/eval_data.py`) so the old CLI
+eval and the new endpoint can't drift apart. The endpoint returns accuracy +
+per-type breakdown + per-question results. The page turns that into a count-up
+stat, animated bars, and a mismatch-highlighted table, with a glass shimmer while
+it runs.
+
+### How we proved it
+
+`POST /evaluation/run` → 100% (10/10), every type 2/2, no mismatches — exactly
+the shape the dashboard draws.
+
+### The lesson
+
+**A metric you can run with one click gets run.** Turning the CLI eval into a
+button with animated results makes "is the router any good?" something you
+actually check — and comparing prompt v1 vs v2 becomes a visible number, not a
+gut feeling.
 
 ---
 

@@ -22,22 +22,8 @@ import sys
 # Make `backend` importable when run as `python3 demo/eval_phase7.py`.
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from backend.eval_data import GOLD  # noqa: E402  (shared gold set, single source of truth)
 from backend.llm.graph import classify_intent  # noqa: E402
-
-# Hand-labeled gold set: 2 per memory type. These are the "right answers" a
-# human decided on — the yardstick the router is measured against.
-GOLD = [
-    ("Why did we choose PostgreSQL over MongoDB?", "decision"),
-    ("What were the tradeoffs of switching to JWT auth?", "decision"),
-    ("How do we deploy the backend to production?", "workflow"),
-    ("What are the steps to onboard a new hire?", "workflow"),
-    ("What does the slugify function do?", "code"),
-    ("How many times does the RetryClient retry a failed call?", "code"),
-    ("What is the office WiFi network name?", "document"),
-    ("What is the meal reimbursement limit in the expense policy?", "document"),
-    ("What did the team agree about Friday deploys in the retro?", "conversation"),
-    ("What was decided about the mobile app in the Q2 planning call?", "conversation"),
-]
 
 
 def evaluate(version: str) -> float:

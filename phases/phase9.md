@@ -11,8 +11,8 @@ adding the next (same discipline as the backend phases):
 - **9a** — scaffold + auth + app shell + project selector ✅
 - **9-design** — liquid-glass design system + restyle the shell ✅ (see below)
 - **9b** — Chat page + routing-transparency panel ✅
-- **9c** — Memories browser + Upload page
-- **9d** — Evaluation dashboard
+- **9c** — Memories browser + Upload page ✅
+- **9d** — Evaluation dashboard ✅
 
 ---
 
@@ -322,3 +322,120 @@ Run the stack (`./run.sh` + `npm run dev`), seed some memories
 the suggested questions. Watch the badge + sources change per answer, and expand
 the token breakdown to see kept vs. dropped. (Use a healthy
 `CONTEXT_TOKEN_BUDGET` ~1500 so answers are grounded — the Phase 8 lesson.)
+
+---
+
+## 9c — Memories Browser + Upload
+
+### What we built
+
+Two pages, plus one new backend endpoint:
+
+- **Upload** — a glass form to add a typed memory (`POST /memories`) and a
+  second form to upload a plain-text document (`POST /documents/upload`). Success
+  and error feedback are **inline glass toasts**, not browser alerts.
+- **Memories** — a responsive grid of memory cards, **filterable by type**, each
+  showing content + `source_ref` + `created_at`. Changing the filter **re-lays
+  out the grid with Framer Motion layout animations** (cards glide/fade as they
+  come and go).
+- **Backend:** a new `GET /memories` list endpoint (with an optional
+  `?memory_type=` filter), since one didn't exist yet.
+
+### New words used in this phase
+
+- **Toast** — a small, temporary notification that slides in (here, in glass)
+  and auto-dismisses. Friendlier than a blocking `alert()` popup.
+- **Layout animation** — Framer Motion watches an element's position/size and
+  animates it smoothly when it *changes* (e.g. cards reflowing when you filter).
+  You opt in with the `layout` prop.
+- **`AnimatePresence`** — lets elements animate *out* when they're removed from
+  the list (not just in).
+- **Multipart / FormData** — how a browser uploads a file: the request body is
+  `FormData` with the file attached, and the browser sets the content type.
+
+### The one design decision worth calling out
+
+A grid can hold *many* cards, and `backdrop-filter` (real blur) is expensive —
+our own guardrail says "blur only on a few large panels." So memory cards use a
+new **`lite` glass** variant: the exact glass *look* (cool sheen, hairline,
+shadow, radius) but **no `backdrop-filter`**, with a slightly higher base opacity
+so text stays readable without the blur. Singular panels still get real blur;
+grids get the cheap look-alike. This is the kind of principled call that keeps a
+glass UI fast instead of janky.
+
+### Files
+
+| File | What it does |
+|---|---|
+| `src/pages/UploadPage.tsx` | Add-memory form + document-upload form + toasts |
+| `src/pages/MemoriesPage.tsx` | Filter chips + animated grid of memory cards |
+| `src/components/Toast.tsx` | `useToasts()` hook + `<ToastStack>` (glass toasts) |
+| `src/components/GlassPanel.tsx` | Added the `lite` (no-blur) variant |
+| `backend/api/memories.py` | New `GET /memories` list endpoint (+ type filter) |
+
+### How we verified it (live)
+
+- `GET /memories` → 200 with all memories grouped by type; `?memory_type=decision`
+  → only decisions; `?memory_type=bogus` → **400** (clear error).
+- `POST /memories` → 201 (created a "trunk-based development" decision).
+- `POST /documents/upload` (multipart, exactly as the UI sends it) → 201,
+  `chunks_created: 1`.
+- All three pages transformed in the dev server with no errors.
+
+### Try it yourself
+
+On **Upload**, add a decision (e.g. "We decided to adopt trunk-based
+development") → a green glass toast confirms it. Go to **Memories**, click the
+**Decision** filter → the grid animates down to just decisions and your new card
+is there.
+
+---
+
+## 9d — Evaluation Dashboard
+
+### What we built
+
+- **Backend:** a new `POST /evaluation/run` endpoint that runs the Phase 7
+  routing gold set through the classifier on demand and returns overall accuracy,
+  a per-memory-type breakdown, and each question's expected-vs-predicted result.
+  (The gold set moved to `backend/eval_data.py` so the CLI eval and this endpoint
+  share **one** source of truth.)
+- **Frontend:** an Evaluation page that renders it in glass — overall accuracy as
+  an **animated count-up**, a **per-type breakdown with bars that grow** to their
+  values, and a **table** of every question with mismatches **highlighted in the
+  accent color**. The "Run evaluation" button shows a **glass shimmer** while it
+  works (no spinner-on-white).
+
+### New words used in this phase
+
+- **On-demand endpoint** — work that runs only when you ask (a button press),
+  not on every page load. This one makes real LLM calls, so it's deliberately
+  behind a button.
+- **Count-up animation** — a number that animates from 0 to its final value,
+  drawing the eye to the headline metric.
+- **Gold set** — the fixed list of questions with human-decided correct answers
+  (from Phase 7). Accuracy = how many the router got right.
+
+### Files
+
+| File | What it does |
+|---|---|
+| `backend/eval_data.py` | The shared gold set (used by CLI + endpoint) |
+| `backend/api/evaluation.py` | `POST /evaluation/run` — scores routing, returns JSON |
+| `src/pages/EvaluationPage.tsx` | Count-up stat, per-type bars, mismatch table |
+| `demo/eval_phase7.py` | Refactored to import the shared gold set |
+
+### How we verified it (live)
+
+`POST /evaluation/run` → 200, **accuracy 100% (10/10)**, every type 2/2, zero
+mismatches — returning exactly the shape the dashboard renders (a number for the
+count-up, `per_type` for the bars, `results` for the table). The build compiled
+cleanly and the page transformed with no errors.
+
+### Try it yourself
+
+On **Evaluation**, click **Run evaluation**. After a few seconds (it makes one
+classifier call per question) the accuracy count-up animates in, the per-type
+bars grow, and the table fills — any misroute is highlighted. Switch
+`CLASSIFIER_PROMPT_VERSION` to `v1` in `.env`, restart the backend, and re-run to
+compare prompt versions as a number.

@@ -146,6 +146,19 @@ a:hover {
   --glass-base: rgba(15, 17, 28, 0.62);
 }
 
+/* Lite variant: the glass LOOK (sheen, hairline, shadow, radius) but NO
+   backdrop-filter — for grids/lists where many blurred elements would be
+   expensive (guardrail: blur only on a few large panels). Higher base opacity
+   so it stays readable without the blur doing any work. */
+.glass-lite {
+  position: relative;
+  background-color: rgba(15, 20, 33, 0.66);
+  background-image: var(--glass-sheen);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  box-shadow: var(--glass-shadow), var(--glass-inset);
+}
+
 /* Fallback: no backdrop-filter support => opaque-ish panel so text stays
    readable instead of see-through. */
 @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {

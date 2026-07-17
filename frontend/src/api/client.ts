@@ -5,7 +5,16 @@
 // AuthContext calls setAuthToken() on login/logout; every request below then
 // attaches it as a Bearer token automatically.
 
-import type { ChatResponse, ContextTrace, Project, Token, User } from "./types";
+import type {
+  ChatResponse,
+  ContextTrace,
+  DocumentUploadResult,
+  EvalResponse,
+  Memory,
+  Project,
+  Token,
+  User,
+} from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8010";
 
@@ -86,6 +95,28 @@ export const api = {
 
   // --- context trace (Phase 7) ---
   getContextTrace: (messageId: number) => request<ContextTrace>(`/context-trace/${messageId}`),
+
+  // --- memories (Phase 5 / 9c) ---
+  listMemories: (memoryType?: string) =>
+    request<Memory[]>(`/memories${memoryType ? `?memory_type=${encodeURIComponent(memoryType)}` : ""}`),
+
+  createMemory: (memoryType: string, content: string, sourceRef?: string) =>
+    request<Memory>("/memories", {
+      method: "POST",
+      body: JSON.stringify({ memory_type: memoryType, content, source_ref: sourceRef || null }),
+    }),
+
+  // --- documents (Phase 3 / 9c) ---
+  uploadDocument: (projectId: number, file: File) => {
+    const form = new FormData();
+    form.append("project_id", String(projectId));
+    form.append("file", file);
+    return request<DocumentUploadResult>("/documents/upload", { method: "POST", body: form });
+  },
+
+  // --- evaluation (Phase 7 / 9d) ---
+  runEvaluation: (version?: string) =>
+    request<EvalResponse>(`/evaluation/run${version ? `?version=${version}` : ""}`, { method: "POST" }),
 };
 
 export { API_URL };
