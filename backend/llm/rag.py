@@ -5,16 +5,18 @@ from backend.llm.client import get_llm
 
 # The system message is what keeps answers *grounded*: we explicitly tell the
 # model to use only the retrieved context and to admit when the answer isn't
-# there, instead of guessing from its own training knowledge.
+# there, instead of guessing from its own training knowledge. Exposed as a
+# constant so the context-budget code (Phase 7) can count its tokens.
+SYSTEM_PROMPT_TEXT = (
+    "You are a helpful assistant for the MemoryRAG project. "
+    "Answer the user's question using ONLY the context below. "
+    "If the answer is not in the context, say you don't know based on the "
+    "available documents — do not make anything up."
+)
+
 _PROMPT = ChatPromptTemplate.from_messages(
     [
-        (
-            "system",
-            "You are a helpful assistant for the MemoryRAG project. "
-            "Answer the user's question using ONLY the context below. "
-            "If the answer is not in the context, say you don't know based on the "
-            "available documents — do not make anything up.",
-        ),
+        ("system", SYSTEM_PROMPT_TEXT),
         ("human", "Context:\n{context}\n\nQuestion: {question}"),
     ]
 )

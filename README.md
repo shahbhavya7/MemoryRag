@@ -296,3 +296,30 @@ python demo/demo_phase6.py
 ```
 
 `demo_phase6.py` seeds one distinctive entry per memory type, then asks five questions — each aimed at a different type (a "why did we choose X" → decision, a "how do we release" → workflow, etc.) — and prints **which memory type the router picked** for each, asserting all five route correctly. A bonus step then *states* a new decision and shows the `memory_update` node saving it back to `decision` memory.
+
+## Phase 7: Prompt versioning + context engineering + evaluation
+
+Three upgrades to make the system tunable and *measurable*:
+
+**1. Versioned prompts** (`backend/prompts/`). The classifier prompt now lives in files (`classifier_v1.txt`, `classifier_v2.txt`), selected via `CLASSIFIER_PROMPT_VERSION` (default `v2`). Change the prompt without touching code, and A/B different versions.
+
+**2. Real context engineering** ([backend/llm/context.py](backend/llm/context.py)). The old blunt character-limit truncation is replaced with **token counting** (`tiktoken`) and a **token budget** (`CONTEXT_TOKEN_BUDGET`, default 1200) split across *system prompt / conversation history / retrieved context*. History and chunks are fit into their share; the lowest-scored chunks are dropped first when space runs out.
+
+**3. Evaluation** — a real routing-accuracy metric, not a vibe check.
+
+### New endpoint
+
+| Method | Path                          | Description |
+|--------|-------------------------------|-------------|
+| GET    | `/context-trace/{message_id}` | For a given chat answer: what was retrieved, what was **kept vs. dropped**, and the token breakdown (system/history/context/total) |
+
+Every `/chat` response now includes a `message_id`; pass it to `/context-trace/{message_id}` to see exactly what the LLM was (and wasn't) given.
+
+### Run the evaluation
+
+```bash
+set -a; source .env; set +a        # eval needs LLM_API_KEY
+python demo/eval_phase7.py
+```
+
+`eval_phase7.py` runs 10 hand-labeled `question → expected memory type` pairs through the router and prints **routing accuracy** — for *both* prompt versions, so you can see as a number whether a prompt change actually helped. This is the project's first real retrieval-quality metric. (Routing uses an LLM classifier, so exact numbers vary slightly run to run.)

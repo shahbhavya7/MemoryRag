@@ -12,6 +12,7 @@ relevant memory instead of everything.
 
 import json
 import re
+from functools import lru_cache
 
 from langgraph.graph import END, StateGraph
 from typing_extensions import TypedDict
@@ -20,25 +21,28 @@ from backend.database.session import SessionLocal
 from backend.embeddings.model import embed_query
 from backend.embeddings.store import MEMORY_NAMESPACES, search_namespace
 from backend.llm.client import get_llm
-from backend.llm.rag import answer_with_context
+from backend.llm.context import build_context
+from backend.llm.rag import SYSTEM_PROMPT_TEXT, answer_with_context
 from backend.memory_writer import store_memory
+from backend.prompts import classifier_version, load_classifier_prompt
 
 VALID_TYPES = list(MEMORY_NAMESPACES.keys())  # document, code, decision, workflow, conversation
 
 PER_NAMESPACE_TOP_K = 4    # how many hits to pull from each selected namespace
 DEFAULT_FINAL_TOP_K = 4    # how many to keep after merging + re-ranking
-MAX_CONTEXT_CHARS = 2000   # hard truncation for the prompt (Phase 7 makes this smarter)
 
 
 class GraphState(TypedDict, total=False):
     query: str
     project_id: int | None
     final_top_k: int
+    history: list[str]         # recent "role: content" lines for this project
     intent: list[str]          # memory types chosen by the classifier
     namespaces: list[str]      # the Pinecone namespaces those map to
     retrieved: list[dict]      # raw hits from all selected namespaces
     reranked: list[dict]       # merged + score-sorted + trimmed
-    context: str               # the truncated context string
+    context: str               # the token-budgeted context string
+    context_trace: dict        # what was kept/dropped + token breakdown
     answer: str
     memory_update_result: dict  # what (if anything) got saved back (node is named memory_update)
 
@@ -48,38 +52,18 @@ class GraphState(TypedDict, total=False):
 from langchain_core.output_parsers import StrOutputParser  # noqa: E402
 from langchain_core.prompts import ChatPromptTemplate  # noqa: E402
 
-_CLASSIFIER_PROMPT = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            "You are an intent classifier for a multi-memory retrieval system. "
-            "Decide which memory type(s) are relevant to the user's query.\n"
-            "Choices and what each holds:\n"
-            "- document: reference facts, policies, settings, names, prices — "
-            "factual 'what is X' lookups (e.g. the WiFi password, office address, "
-            "travel policy). Notes, docs, wiki pages.\n"
-            "- code: functions, classes, APIs, what a piece of code does.\n"
-            "- decision: WHY a choice was made, tradeoffs, alternatives considered "
-            "('why did we pick X over Y').\n"
-            "- workflow: HOW to carry out a process — ordered steps, deployment, "
-            "release, runbooks ('how do we deploy / release / do X').\n"
-            "- conversation: what was specifically SAID, AGREED, or DISCUSSED in a "
-            "past meeting, retro, or call ('what did the team agree', 'what was "
-            "decided in the standup').\n"
-            "Disambiguation: a plain factual 'what is ...' question is 'document', "
-            "NOT 'conversation'. Only choose 'conversation' when the query explicitly "
-            "refers to a discussion/meeting/what someone said.\n"
-            "Return ONLY the applicable type name(s), lowercase, comma-separated, "
-            "nothing else. Prefer a single type; use multiple only if the query "
-            "clearly spans more than one.",
-        ),
-        ("human", "{query}"),
-    ]
-)
+@lru_cache(maxsize=8)
+def _classifier_template(version: str) -> ChatPromptTemplate:
+    # The system text now comes from a versioned file in backend/prompts/,
+    # selectable via CLASSIFIER_PROMPT_VERSION. Cached per version so we don't
+    # re-read the file on every call.
+    system_text = load_classifier_prompt(version)
+    return ChatPromptTemplate.from_messages([("system", system_text), ("human", "{query}")])
 
 
-def _classify_intent(query: str) -> list[str]:
-    chain = _CLASSIFIER_PROMPT | get_llm() | StrOutputParser()
+def classify_intent(query: str, version: str | None = None) -> list[str]:
+    version = version or classifier_version()
+    chain = _classifier_template(version) | get_llm() | StrOutputParser()
     raw = chain.invoke({"query": query})
     picked = [tok for tok in re.split(r"[^a-z]+", raw.lower()) if tok in VALID_TYPES]
     # de-dupe, preserve order
@@ -135,7 +119,7 @@ def receive_query(state: GraphState) -> dict:
 
 
 def intent_detection(state: GraphState) -> dict:
-    return {"intent": _classify_intent(state["query"])}
+    return {"intent": classify_intent(state["query"])}
 
 
 def memory_router(state: GraphState) -> dict:
@@ -162,18 +146,15 @@ def re_ranker(state: GraphState) -> dict:
 
 
 def context_builder(state: GraphState) -> dict:
-    # Assemble the context, hard-truncating at a character budget for now.
-    parts, total = [], 0
-    for hit in state["reranked"]:
-        text = hit["text"]
-        if total + len(text) > MAX_CONTEXT_CHARS:
-            text = text[: max(0, MAX_CONTEXT_CHARS - total)]
-        if text:
-            parts.append(text)
-            total += len(text)
-        if total >= MAX_CONTEXT_CHARS:
-            break
-    return {"context": "\n\n---\n\n".join(parts)}
+    # Phase 7: real context engineering. Fit conversation history + retrieved
+    # chunks into a TOKEN budget (not a character count), and record exactly
+    # what was kept vs. dropped so /context-trace can report it.
+    context, trace = build_context(
+        SYSTEM_PROMPT_TEXT,
+        state.get("reranked", []),
+        state.get("history", []),
+    )
+    return {"context": context, "context_trace": trace}
 
 
 def llm_response(state: GraphState) -> dict:
@@ -235,5 +216,17 @@ def _build_graph():
 GRAPH = _build_graph()
 
 
-def run_chat_graph(query: str, project_id: int | None = None, final_top_k: int = DEFAULT_FINAL_TOP_K) -> GraphState:
-    return GRAPH.invoke({"query": query, "project_id": project_id, "final_top_k": final_top_k})
+def run_chat_graph(
+    query: str,
+    project_id: int | None = None,
+    final_top_k: int = DEFAULT_FINAL_TOP_K,
+    history: list[str] | None = None,
+) -> GraphState:
+    return GRAPH.invoke(
+        {
+            "query": query,
+            "project_id": project_id,
+            "final_top_k": final_top_k,
+            "history": history or [],
+        }
+    )

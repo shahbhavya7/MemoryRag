@@ -105,6 +105,33 @@ class ChatResponse(BaseModel):
     memory_types: list[str]  # which memory type(s) the router picked (the Phase 6 proof point)
     sources: list[ChatSource]
     memory_update: dict | None = None
+    message_id: int | None = None  # id to fetch this exchange's context trace (Phase 7)
+
+
+class TokenBreakdown(BaseModel):
+    system: int
+    history: int
+    context: int
+    total: int
+
+
+class RetrievedItemTrace(BaseModel):
+    memory_type: str | None = None
+    score: float
+    tokens: int
+    kept: bool
+    preview: str
+
+
+class ContextTraceOut(BaseModel):
+    message_id: int
+    token_budget: int
+    tokens: TokenBreakdown
+    history_messages_available: int
+    history_messages_kept: int
+    kept_count: int
+    dropped_count: int
+    retrieved: list[RetrievedItemTrace]
 
 
 class MemoryCreate(BaseModel):
