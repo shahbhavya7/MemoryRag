@@ -129,9 +129,12 @@ def memory_router(state: GraphState) -> dict:
 
 def retriever(state: GraphState) -> dict:
     query_embedding = embed_query(state["query"])
+    project_id = state.get("project_id")
     retrieved: list[dict] = []
     for memory_type, namespace in zip(state["intent"], state["namespaces"]):
-        for hit in search_namespace(namespace, query_embedding, PER_NAMESPACE_TOP_K):
+        # Scope retrieval to the current project so a project only sees its own
+        # memories/documents.
+        for hit in search_namespace(namespace, query_embedding, PER_NAMESPACE_TOP_K, project_id=project_id):
             hit["memory_type"] = memory_type  # tag with the type we queried it from
             retrieved.append(hit)
     return {"retrieved": retrieved}
@@ -174,7 +177,13 @@ def memory_update(state: GraphState) -> dict:
         if data.get("save") and data.get("memory_type") in VALID_TYPES and data.get("content"):
             db = SessionLocal()
             try:
-                memory = store_memory(db, data["memory_type"], data["content"], source_ref="chat")
+                memory = store_memory(
+                    db,
+                    data["memory_type"],
+                    data["content"],
+                    source_ref="chat",
+                    project_id=state.get("project_id"),
+                )
                 result = {
                     "saved": memory is not None,
                     "memory_type": data["memory_type"],

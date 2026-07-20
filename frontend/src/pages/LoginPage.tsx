@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { Sparkles } from "lucide-react";
+
 import { GlassPanel } from "../components/GlassPanel";
 import BlurText from "../components/reactbits/BlurText";
 import { useAuth } from "../auth/AuthContext";
@@ -31,8 +33,9 @@ export default function LoginPage() {
     <div className="grid min-h-full place-items-center p-6">
       <GlassPanel strong className="w-full max-w-[400px] p-8">
         <form onSubmit={handleSubmit}>
-          <div className="mb-6 font-bold tracking-wide">
-            <span className="text-accent-2">◆</span> <span className="brand-gradient">MemoryRAG</span>
+          <div className="mb-6 flex items-center gap-2 font-bold tracking-wide">
+            <Sparkles size={18} className="text-accent" />
+            <span className="brand-gradient">MemoryRAG</span>
           </div>
           <BlurText
             text="Welcome back"

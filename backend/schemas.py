@@ -138,6 +138,7 @@ class MemoryCreate(BaseModel):
     memory_type: str  # one of: document, code, decision, workflow, conversation
     content: str
     source_ref: str | None = None
+    project_id: int  # memories are scoped to a project
 
 
 class MemoryOut(BaseModel):
@@ -147,6 +148,7 @@ class MemoryOut(BaseModel):
     memory_type: str
     content: str
     source_ref: str | None = None
+    project_id: int | None = None
     created_at: datetime
 
 
@@ -154,6 +156,7 @@ class MemorySearchRequest(BaseModel):
     memory_type: str
     query: str
     top_k: int = 5
+    project_id: int | None = None
 
 
 class MemorySearchResult(BaseModel):

@@ -4,12 +4,14 @@
 // would be expensive — the blur guardrail.
 
 import { AnimatePresence, motion } from "framer-motion";
+import { LayoutGrid, RefreshCw, Tag, type LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { api, ApiError } from "../api/client";
 import { MEMORY_TYPES, type Memory } from "../api/types";
 import { GlassCard, GlassPanel } from "../components/GlassPanel";
 import { memoryMeta } from "../lib/memoryTypes";
+import { useProjects } from "../project/ProjectContext";
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -23,16 +25,22 @@ function formatDate(iso: string): string {
 }
 
 export default function MemoriesPage() {
+  const { selectedProjectId, selectedProject } = useProjects();
   const [all, setAll] = useState<Memory[]>([]);
   const [filter, setFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
+    if (!selectedProjectId) {
+      setAll([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      setAll(await api.listMemories());
+      setAll(await api.listMemories(selectedProjectId));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to load memories.");
     } finally {
@@ -40,9 +48,11 @@ export default function MemoriesPage() {
     }
   }
 
+  // Reload whenever the selected project changes (memories are project-scoped).
   useEffect(() => {
     void load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProjectId]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
@@ -57,20 +67,36 @@ export default function MemoriesPage() {
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1>Memories</h1>
-          <p className="text-fg-muted mt-1">Everything stored across the five memory types.</p>
+          <p className="text-fg-muted mt-1">
+            Stored in{" "}
+            <strong className="text-fg">{selectedProject?.name ?? "— no project —"}</strong>, across the
+            five memory types.
+          </p>
         </div>
-        <button type="button" className="ghost" onClick={() => void load()} disabled={loading}>
-          ↻ Refresh
+        <button
+          type="button"
+          className="ghost inline-flex items-center gap-1.5"
+          onClick={() => void load()}
+          disabled={loading}
+        >
+          <RefreshCw size={14} /> Refresh
         </button>
       </div>
 
       {/* Filter chips */}
       <div className="mb-5 flex flex-wrap gap-2">
-        <FilterChip label="All" active={filter === "all"} count={all.length} onClick={() => setFilter("all")} />
+        <FilterChip
+          label="All"
+          Icon={LayoutGrid}
+          active={filter === "all"}
+          count={all.length}
+          onClick={() => setFilter("all")}
+        />
         {MEMORY_TYPES.map((t) => (
           <FilterChip
             key={t}
-            label={`${memoryMeta(t).emoji} ${memoryMeta(t).label}`}
+            label={memoryMeta(t).label}
+            Icon={memoryMeta(t).Icon}
             color={memoryMeta(t).color}
             active={filter === t}
             count={counts[t] ?? 0}
@@ -93,11 +119,17 @@ export default function MemoriesPage() {
         </div>
       )}
 
-      {!error && !loading && filtered.length === 0 && (
+      {!error && !loading && !selectedProjectId && (
+        <GlassCard className="max-w-lg">
+          <p className="text-fg-muted">Select a project in the top bar to see its memories.</p>
+        </GlassCard>
+      )}
+
+      {!error && !loading && selectedProjectId && filtered.length === 0 && (
         <GlassCard className="max-w-lg">
           <p className="text-fg-muted">
-            No memories {filter !== "all" ? `of type “${memoryMeta(filter).label}”` : "yet"}. Add some on
-            the Upload page.
+            No memories {filter !== "all" ? `of type “${memoryMeta(filter).label}”` : "in this project yet"}.
+            Add some on the Upload page.
           </p>
         </GlassCard>
       )}
@@ -122,15 +154,18 @@ export default function MemoriesPage() {
                         className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[0.68rem] font-semibold"
                         style={{ color: meta.color, borderColor: `${meta.color}59`, background: `${meta.color}1f` }}
                       >
-                        <span aria-hidden="true">{meta.emoji}</span>
+                        <meta.Icon size={12} className="shrink-0" aria-hidden="true" />
                         {meta.label}
                       </span>
                       <span className="text-fg-faint text-[0.68rem]">{formatDate(m.created_at)}</span>
                     </div>
                     <p className="text-fg line-clamp-5 text-sm leading-relaxed">{m.content}</p>
                     {m.source_ref && (
-                      <div className="text-fg-muted mt-3 truncate font-mono text-[0.7rem]" title={m.source_ref}>
-                        ⎘ {m.source_ref}
+                      <div
+                        className="text-fg-muted mt-3 flex items-center gap-1.5 truncate font-mono text-[0.7rem]"
+                        title={m.source_ref}
+                      >
+                        <Tag size={11} className="shrink-0" /> {m.source_ref}
                       </div>
                     )}
                   </GlassPanel>
@@ -146,12 +181,14 @@ export default function MemoriesPage() {
 
 function FilterChip({
   label,
+  Icon,
   count,
   active,
   color,
   onClick,
 }: {
   label: string;
+  Icon: LucideIcon;
   count: number;
   active: boolean;
   color?: string;
@@ -161,7 +198,7 @@ function FilterChip({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-full px-3 py-1.5 text-sm transition-colors"
+      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors"
       style={
         active
           ? {
@@ -172,6 +209,7 @@ function FilterChip({
           : undefined
       }
     >
+      <Icon size={14} className="shrink-0" />
       {label} <span className="opacity-60">{count}</span>
     </button>
   );

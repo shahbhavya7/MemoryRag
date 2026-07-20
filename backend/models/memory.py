@@ -27,6 +27,10 @@ class Memory(Base):
     __tablename__ = "memories"
 
     id = Column(Integer, primary_key=True, index=True)
+    # Which project this memory belongs to. Scopes retrieval so a project's chat
+    # only sees its own memories. Plain indexed Integer (no FK), consistent with
+    # how messages/documents treat project_id.
+    project_id = Column(Integer, nullable=True, index=True)
     memory_type_id = Column(Integer, ForeignKey("memory_types.id"), nullable=False, index=True)
     content = Column(Text, nullable=False)
     source_ref = Column(String, nullable=True)

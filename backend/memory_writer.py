@@ -9,13 +9,24 @@ from backend.models.memory import Memory, MemoryType
 # place. Returns the created Memory, or None if the type name is unknown.
 
 
-def store_memory(db: Session, memory_type_name: str, content: str, source_ref: str | None = None) -> Memory | None:
+def store_memory(
+    db: Session,
+    memory_type_name: str,
+    content: str,
+    source_ref: str | None = None,
+    project_id: int | None = None,
+) -> Memory | None:
     memory_type = db.query(MemoryType).filter(MemoryType.name == memory_type_name).first()
     if memory_type is None:
         return None
 
     # 1. Save the relational row first so we have its id to tie the vector back to.
-    memory = Memory(memory_type_id=memory_type.id, content=content, source_ref=source_ref)
+    memory = Memory(
+        memory_type_id=memory_type.id,
+        content=content,
+        source_ref=source_ref,
+        project_id=project_id,
+    )
     db.add(memory)
     db.commit()
     db.refresh(memory)
@@ -29,6 +40,7 @@ def store_memory(db: Session, memory_type_name: str, content: str, source_ref: s
         memory_type=memory_type.name,
         content=content,
         source_ref=source_ref,
+        project_id=project_id,
     )
 
     # 3. Record which vector this row maps to.

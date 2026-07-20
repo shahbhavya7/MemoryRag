@@ -4,16 +4,17 @@
 // blurred panel (design guardrail: no nested backdrop-filter).
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { BarChart3, Brain, MessageSquare, Sparkles, Upload as UploadIcon } from "lucide-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthContext";
 import ProjectSelector from "./ProjectSelector";
 
 const NAV = [
-  { to: "/chat", label: "Chat", icon: "💬" },
-  { to: "/memories", label: "Memories", icon: "🧠" },
-  { to: "/upload", label: "Upload", icon: "⬆️" },
-  { to: "/evaluation", label: "Evaluation", icon: "📊" },
+  { to: "/chat", label: "Chat", Icon: MessageSquare },
+  { to: "/memories", label: "Memories", Icon: Brain },
+  { to: "/upload", label: "Upload", Icon: UploadIcon },
+  { to: "/evaluation", label: "Evaluation", Icon: BarChart3 },
 ];
 
 export default function AppShell() {
@@ -26,7 +27,7 @@ export default function AppShell() {
       {/* Sidebar */}
       <aside className="glass flex flex-col p-4">
         <div className="flex items-center gap-2.5 px-2 pb-6 pt-1 text-[1.05rem] font-bold">
-          <span className="text-accent-2 text-lg">◆</span>
+          <Sparkles size={20} className="text-accent shrink-0" />
           <span className="brand-gradient">MemoryRAG</span>
         </div>
         <nav className="flex flex-col gap-1">
@@ -50,7 +51,10 @@ export default function AppShell() {
                       transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34 }}
                     />
                   )}
-                  <span className="relative z-10 w-5 text-center">{item.icon}</span>
+                  <item.Icon
+                    size={18}
+                    className={`relative z-10 shrink-0 ${isActive ? "text-accent" : ""}`}
+                  />
                   <span className={`relative z-10 ${isActive ? "text-fg" : "text-fg-muted"}`}>
                     {item.label}
                   </span>

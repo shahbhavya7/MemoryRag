@@ -27,11 +27,11 @@ export default function UploadPage() {
 
   async function submitMemory(e: FormEvent) {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!content.trim() || !selectedProjectId) return;
     setSavingMemory(true);
     try {
-      await api.createMemory(memoryType, content.trim(), sourceRef.trim() || undefined);
-      push("success", `Saved to ${memoryMeta(memoryType).label} memory.`);
+      await api.createMemory(selectedProjectId, memoryType, content.trim(), sourceRef.trim() || undefined);
+      push("success", `Saved to ${memoryMeta(memoryType).label} memory in ${selectedProject?.name}.`);
       setContent("");
       setSourceRef("");
     } catch (err) {
@@ -74,7 +74,7 @@ export default function UploadPage() {
             <select id="mtype" value={memoryType} onChange={(e) => setMemoryType(e.target.value)}>
               {MEMORY_TYPES.map((t) => (
                 <option key={t} value={t}>
-                  {memoryMeta(t).emoji} {memoryMeta(t).label}
+                  {memoryMeta(t).label}
                 </option>
               ))}
             </select>
@@ -102,7 +102,17 @@ export default function UploadPage() {
               onChange={(e) => setSourceRef(e.target.value)}
             />
 
-            <button type="submit" className="primary mt-5 w-full" disabled={savingMemory || !content.trim()}>
+            {!selectedProjectId && (
+              <p className="mt-3 text-xs" style={{ color: "var(--danger)" }}>
+                Select a project in the top bar first.
+              </p>
+            )}
+
+            <button
+              type="submit"
+              className="primary mt-5 w-full"
+              disabled={savingMemory || !content.trim() || !selectedProjectId}
+            >
               {savingMemory ? "Saving…" : "Save memory"}
             </button>
           </form>

@@ -1,6 +1,7 @@
 // The top-bar project selector, backed by the /projects endpoints.
 // Switch the active project or create a new one inline.
 
+import { Plus } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { useProjects } from "../project/ProjectContext";
@@ -63,8 +64,12 @@ export default function ProjectSelector() {
           </button>
         </form>
       ) : (
-        <button type="button" className="ghost" onClick={() => setCreating(true)}>
-          + New
+        <button
+          type="button"
+          className="ghost inline-flex items-center gap-1.5"
+          onClick={() => setCreating(true)}
+        >
+          <Plus size={15} /> New
         </button>
       )}
       {error && <span className="text-[var(--danger)] text-xs">{error}</span>}

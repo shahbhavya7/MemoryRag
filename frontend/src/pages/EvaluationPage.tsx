@@ -4,6 +4,7 @@
 // expected-vs-predicted with mismatches highlighted.
 
 import { motion, useReducedMotion } from "framer-motion";
+import { Check, X } from "lucide-react";
 import { useState } from "react";
 
 import { api, ApiError } from "../api/client";
@@ -109,10 +110,13 @@ function ResultsTable({ data }: { data: EvalResponse }) {
                 </td>
                 <td className="px-2 py-2.5">
                   {r.correct ? (
-                    <span style={{ color: "var(--ok)" }}>✓</span>
+                    <Check size={16} style={{ color: "var(--ok)" }} />
                   ) : (
-                    <span style={{ color: "var(--danger)" }} className="font-semibold">
-                      ✗ miss
+                    <span
+                      className="inline-flex items-center gap-1 font-semibold"
+                      style={{ color: "var(--danger)" }}
+                    >
+                      <X size={14} /> miss
                     </span>
                   )}
                 </td>

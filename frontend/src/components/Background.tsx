@@ -16,7 +16,7 @@ export default function Background() {
     <div className="bg-aurora" aria-hidden="true">
       {!reduce && (
         <div className="absolute inset-0 opacity-80">
-          <Aurora colorStops={["#7c3aed", "#ec4899", "#6366f1"]} amplitude={1.15} blend={0.6} />
+          <Aurora colorStops={["#6d28d9", "#a855f7", "#6366f1"]} amplitude={1.15} blend={0.6} />
         </div>
       )}
     </div>

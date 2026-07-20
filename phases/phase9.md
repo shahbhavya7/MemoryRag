@@ -262,6 +262,28 @@ React Bits is the *animation* layer on top of the same design system. See
 
 ---
 
+### Project-scoped memories (post-9c enhancement)
+
+Originally memories lived in shared namespaces, so every project saw the same
+knowledge. We made memories **project-specific**: each memory (and its vector)
+is tagged with a `project_id`, and all retrieval filters on it.
+
+- **DB:** `memories.project_id` column (indexed).
+- **Vectors:** `add_memory_vector` writes `project_id` into Pinecone metadata;
+  `search_namespace` / `search_memories` filter by it.
+- **Graph:** the retriever passes the chat's `project_id`, and the
+  `memory_update` node saves auto-captured memories under it.
+- **API:** `POST /memories` requires `project_id`; `GET /memories?project_id=…`
+  and `/memories/search` filter by it.
+- **Frontend:** Upload saves into the selected project; Memories lists only that
+  project's memories and reloads on project switch.
+
+Documents were already tagged with `project_id`, so once the graph retriever
+started filtering, document retrieval became project-scoped too. Verified live:
+two projects with different decisions each only ever retrieved their own.
+
+---
+
 ## 9b — Chat + Routing Transparency
 
 ### What we built

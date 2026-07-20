@@ -1,12 +1,16 @@
 """Seeds a rich set of typed memories so you can test Phase 6 routing yourself.
 
 Usage:
-    python3 demo/seed_phase6.py [base_url]
+    python3 demo/seed_phase6.py [base_url] [project_id]
 
 Requires the API running (see README). This posts several entries to each of
 the five memory types via POST /memories, waits for the vector namespaces to
 settle, then prints a list of suggested questions to try against POST /chat —
 each aimed at a specific memory type, so you can watch the router pick it.
+
+Memories are project-scoped (Phase 9 enhancement), so every seeded entry is
+tagged with `project_id` (default 1) — pass a second argument to seed a
+different project, e.g. `python3 demo/seed_phase6.py http://localhost:8010 3`.
 
 Unlike demo_phase6.py (which asserts routing automatically), this script just
 sets the stage for hands-on testing in Swagger UI or curl.
@@ -18,6 +22,7 @@ import time
 import requests
 
 BASE_URL = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8010"
+PROJECT_ID = int(sys.argv[2]) if len(sys.argv) > 2 else 6 # Default project_id for seeding is 1
 
 # A handful of clearly-typed, made-up entries per memory type. Made-up so any
 # correct answer proves retrieval, not the model's prior knowledge.
@@ -61,10 +66,13 @@ SUGGESTED_QUESTIONS = {
 
 def main() -> None:
     total = 0
-    print("Seeding memories across all five types...")
+    print(f"Seeding memories across all five types (project_id={PROJECT_ID})...")
     for memory_type, entries in SEED.items():
         for entry in entries:
-            r = requests.post(f"{BASE_URL}/memories", json={"memory_type": memory_type, **entry})
+            r = requests.post(
+                f"{BASE_URL}/memories",
+                json={"memory_type": memory_type, "project_id": PROJECT_ID, **entry},
+            )
             r.raise_for_status()
             total += 1
         print(f"  [{memory_type}] seeded {len(entries)} entries")
@@ -74,8 +82,10 @@ def main() -> None:
     for _ in range(18):
         ready = []
         for memory_type in SEED:
-            r = requests.post(f"{BASE_URL}/memories/search",
-                              json={"memory_type": memory_type, "query": "x", "top_k": 1})
+            r = requests.post(
+                f"{BASE_URL}/memories/search",
+                json={"memory_type": memory_type, "query": "x", "top_k": 1, "project_id": PROJECT_ID},
+            )
             ready.append(bool(r.ok and r.json()["results"]))
         if all(ready):
             print("All namespaces settled — ready to test.\n")
@@ -91,7 +101,7 @@ def main() -> None:
         print(f"\n  expect -> {expected_type}")
         print(f"  question: {question}")
         print(f'  curl: curl -s -X POST {BASE_URL}/chat -H "Content-Type: application/json" \\')
-        print(f"           -d '{{\"project_id\": 1, \"message\": \"{question}\"}}'")
+        print(f'           -d \'{{"project_id": {PROJECT_ID}, "message": "{question}"}}\'')
 
     print("\nTip: to see the router's choice, look at \"memory_types\" in each response.")
     print("Or state a NEW fact (e.g. \"We decided to adopt trunk-based development.\")")

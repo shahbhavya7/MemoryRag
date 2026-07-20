@@ -17,7 +17,9 @@ export default function MemoryBadge({
 }) {
   const reduce = useReducedMotion();
   const meta = memoryMeta(type);
+  const Icon = meta.Icon;
   const pad = size === "sm" ? "px-2 py-0.5 text-[0.68rem]" : "px-2.5 py-1 text-xs";
+  const iconSize = size === "sm" ? 12 : 14;
 
   return (
     <motion.span
@@ -32,7 +34,7 @@ export default function MemoryBadge({
         boxShadow: `0 0 18px ${meta.color}22`,
       }}
     >
-      <span aria-hidden="true">{meta.emoji}</span>
+      <Icon size={iconSize} className="shrink-0" aria-hidden="true" />
       {meta.label}
     </motion.span>
   );

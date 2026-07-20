@@ -96,14 +96,22 @@ export const api = {
   // --- context trace (Phase 7) ---
   getContextTrace: (messageId: number) => request<ContextTrace>(`/context-trace/${messageId}`),
 
-  // --- memories (Phase 5 / 9c) ---
-  listMemories: (memoryType?: string) =>
-    request<Memory[]>(`/memories${memoryType ? `?memory_type=${encodeURIComponent(memoryType)}` : ""}`),
+  // --- memories (Phase 5 / 9c) — scoped to a project ---
+  listMemories: (projectId: number, memoryType?: string) => {
+    const params = new URLSearchParams({ project_id: String(projectId) });
+    if (memoryType) params.set("memory_type", memoryType);
+    return request<Memory[]>(`/memories?${params.toString()}`);
+  },
 
-  createMemory: (memoryType: string, content: string, sourceRef?: string) =>
+  createMemory: (projectId: number, memoryType: string, content: string, sourceRef?: string) =>
     request<Memory>("/memories", {
       method: "POST",
-      body: JSON.stringify({ memory_type: memoryType, content, source_ref: sourceRef || null }),
+      body: JSON.stringify({
+        project_id: projectId,
+        memory_type: memoryType,
+        content,
+        source_ref: sourceRef || null,
+      }),
     }),
 
   // --- documents (Phase 3 / 9c) ---

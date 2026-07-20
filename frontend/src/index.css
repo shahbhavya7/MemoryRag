@@ -15,7 +15,7 @@
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   --color-accent: #a855f7; /* primary — violet */
-  --color-accent-2: #ec4899; /* secondary — magenta/pink */
+  --color-accent-2: #7c3aed; /* secondary — deep violet */
   --color-fg: #f4f2f8;
   --color-fg-muted: #c7c3d4;
   --color-fg-faint: #8b8598;
@@ -40,7 +40,7 @@
   --fg-faint: #8b8598; /* decorative only, never body copy */
 
   --accent: #a855f7; /* violet */
-  --accent-2: #ec4899; /* magenta/pink */
+  --accent-2: #7c3aed; /* deep violet */
   --danger: #fb7185;
   --ok: #34d399;
 
@@ -54,8 +54,8 @@
     135deg,
     rgba(224, 190, 255, 0.14),
     rgba(255, 255, 255, 0.04) 40%,
-    rgba(236, 72, 153, 0.05) 100%
-  ); /* diagonal frost, violet -> faint magenta */
+    rgba(124, 58, 237, 0.06) 100%
+  ); /* diagonal frost, violet -> faint deep violet */
   --glass-border: rgba(214, 184, 255, 0.16); /* violet hairline */
   --glass-shadow: 0 12px 40px rgba(8, 2, 18, 0.55);
   /* light top edge + a faint violet rim light = the signature "specular" edge */
@@ -182,7 +182,7 @@ a:hover {
   overflow: hidden;
   background:
     radial-gradient(1200px 800px at 12% -10%, rgba(168, 85, 247, 0.18), transparent 60%),
-    radial-gradient(1100px 750px at 112% 18%, rgba(236, 72, 153, 0.15), transparent 55%),
+    radial-gradient(1100px 750px at 112% 18%, rgba(139, 92, 246, 0.15), transparent 55%),
     radial-gradient(900px 900px at 50% 120%, rgba(99, 102, 241, 0.13), transparent 55%),
     #000000;
 }
@@ -216,7 +216,7 @@ a:hover {
   height: 42vw;
   right: -6vw;
   top: 6vh;
-  background: radial-gradient(circle at 60% 40%, #ec4899, transparent 70%);
+  background: radial-gradient(circle at 60% 40%, #7c3aed, transparent 70%);
   animation: drift2 32s ease-in-out infinite alternate;
 }
 .bg-blob.b3 {

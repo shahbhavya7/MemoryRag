@@ -24,13 +24,14 @@ Defined as CSS variables in `:root` and mirrored into Tailwind's theme
 | `--fg-muted` | `#c7c3d4` | Secondary labels only (still AA on our dark glass) |
 | `--fg-faint` | `#8b8598` | Decorative text only, never body copy |
 | `--accent` | `#a855f7` | **Primary** accent (violet) — interactive/active states |
-| `--accent-2` | `#ec4899` | **Secondary** accent (magenta/pink) — the far end of the gradient |
+| `--accent-2` | `#7c3aed` | **Secondary** accent (deep violet) — the far end of the gradient |
 | `--danger` / `--ok` | `#fb7185` / `#34d399` | Error / success |
 
-**The identity is a violet → magenta gradient.** Primary buttons, the wordmark,
-and the aurora all run violet (`#a855f7`) into magenta (`#ec4899`). Two accents
-total — the glass + background do the heavy lifting; accents are punctuation
-(active nav pill, focus ring, primary button, wordmark, one badge tint).
+**The identity is a violet gradient on true black.** Primary buttons, the
+wordmark, and the aurora run light violet (`#a855f7`) into deep violet
+(`#7c3aed`)/indigo. Two accents total — the glass + background do the heavy
+lifting; accents are punctuation (active nav pill, focus ring, primary button,
+wordmark, one badge tint).
 
 ### Per-memory-type tints (badges only)
 

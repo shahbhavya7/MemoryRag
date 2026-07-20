@@ -102,11 +102,16 @@ def add_memory_vector(
     memory_type: str,
     content: str,
     source_ref: str | None,
+    project_id: int | None = None,
 ) -> str:
-    # Pinecone metadata can't hold null values, so only include source_ref when set.
+    # Pinecone metadata can't hold null values, so only include optional keys when set.
     metadata = {"memory_id": memory_id, "memory_type": memory_type, "content": content}
     if source_ref is not None:
         metadata["source_ref"] = source_ref
+    # project_id makes memories project-scoped: retrieval filters on it so one
+    # project's chat can't see another project's memories.
+    if project_id is not None:
+        metadata["project_id"] = project_id
 
     vector_id = str(uuid.uuid4())
     _get_index().upsert(
@@ -116,15 +121,24 @@ def add_memory_vector(
     return vector_id
 
 
-def search_namespace(namespace: str, query_embedding: list[float], top_k: int) -> list[dict]:
+def search_namespace(
+    namespace: str,
+    query_embedding: list[float],
+    top_k: int,
+    project_id: int | None = None,
+) -> list[dict]:
     # Generic search used by the Phase 6 routing graph. A namespace can hold
     # both document chunks (metadata key "chunk_text") and memory entries
     # (key "content"), so we read whichever text key is present.
+    # When project_id is given, only vectors tagged with that project match —
+    # this is what makes memories project-scoped.
+    query_filter = {"project_id": project_id} if project_id is not None else None
     result = _get_index().query(
         vector=query_embedding,
         top_k=top_k,
         namespace=namespace,
         include_metadata=True,
+        filter=query_filter,
     )
     out = []
     for match in result["matches"]:
@@ -139,12 +153,19 @@ def search_namespace(namespace: str, query_embedding: list[float], top_k: int) -
     return out
 
 
-def search_memories(namespace: str, query_embedding: list[float], top_k: int) -> list[dict]:
+def search_memories(
+    namespace: str,
+    query_embedding: list[float],
+    top_k: int,
+    project_id: int | None = None,
+) -> list[dict]:
+    query_filter = {"project_id": project_id} if project_id is not None else None
     result = _get_index().query(
         vector=query_embedding,
         top_k=top_k,
         namespace=namespace,
         include_metadata=True,
+        filter=query_filter,
     )
     return [
         {

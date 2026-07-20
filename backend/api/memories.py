@@ -32,26 +32,39 @@ def _get_memory_type_or_400(db: Session, name: str) -> MemoryType:
 def create_memory(payload: MemoryCreate, db: Session = Depends(get_db)):
     # Validate the type name up front so a bad type returns a clear 400.
     _get_memory_type_or_400(db, payload.memory_type)
-    memory = store_memory(db, payload.memory_type, payload.content, payload.source_ref)
+    memory = store_memory(
+        db,
+        payload.memory_type,
+        payload.content,
+        payload.source_ref,
+        project_id=payload.project_id,
+    )
     return MemoryOut(
         id=memory.id,
         memory_type=payload.memory_type,
         content=memory.content,
         source_ref=memory.source_ref,
+        project_id=memory.project_id,
         created_at=memory.created_at,
     )
 
 
 @router.get("", response_model=list[MemoryOut])
-def list_memories(memory_type: str | None = None, db: Session = Depends(get_db)):
-    # Browse stored memories (Phase 9c Memories page), newest first, optionally
-    # filtered to one type. Joins MemoryType to return the type NAME (the table
-    # only stores memory_type_id).
+def list_memories(
+    project_id: int | None = None,
+    memory_type: str | None = None,
+    db: Session = Depends(get_db),
+):
+    # Browse stored memories (Phase 9c Memories page), newest first, scoped to a
+    # project and optionally filtered to one type. Joins MemoryType to return the
+    # type NAME (the table only stores memory_type_id).
     query = (
         db.query(Memory, MemoryType.name)
         .join(MemoryType, Memory.memory_type_id == MemoryType.id)
         .order_by(Memory.created_at.desc())
     )
+    if project_id is not None:
+        query = query.filter(Memory.project_id == project_id)
     if memory_type:
         _get_memory_type_or_400(db, memory_type)  # 400 on an unknown type name
         query = query.filter(MemoryType.name == memory_type)
@@ -61,6 +74,7 @@ def list_memories(memory_type: str | None = None, db: Session = Depends(get_db))
             memory_type=type_name,
             content=memory.content,
             source_ref=memory.source_ref,
+            project_id=memory.project_id,
             created_at=memory.created_at,
         )
         for memory, type_name in query.all()
@@ -73,5 +87,7 @@ def search_memory(payload: MemorySearchRequest, db: Session = Depends(get_db)):
     # namespace — this is the direct, un-routed search Phase 5 is about.
     memory_type = _get_memory_type_or_400(db, payload.memory_type)
     query_embedding = embed_query(payload.query)
-    results = search_memories(memory_type.namespace, query_embedding, payload.top_k)
+    results = search_memories(
+        memory_type.namespace, query_embedding, payload.top_k, project_id=payload.project_id
+    )
     return MemorySearchResponse(results=[MemorySearchResult(**r) for r in results])

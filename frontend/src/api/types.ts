@@ -78,6 +78,7 @@ export interface Memory {
   memory_type: string;
   content: string;
   source_ref: string | null;
+  project_id: number | null;
   created_at: string;
 }
 

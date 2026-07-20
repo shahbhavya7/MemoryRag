@@ -2,6 +2,7 @@
 // list; <ToastStack> renders them, animating in/out with Framer Motion.
 
 import { AnimatePresence, motion } from "framer-motion";
+import { CheckCircle2, X, XCircle } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 
 export interface Toast {
@@ -37,6 +38,7 @@ export function ToastStack({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: 
       <AnimatePresence>
         {toasts.map((t) => {
           const color = t.kind === "success" ? "var(--ok)" : "var(--danger)";
+          const Icon = t.kind === "success" ? CheckCircle2 : XCircle;
           return (
             <motion.div
               key={t.id}
@@ -48,18 +50,15 @@ export function ToastStack({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: 
               className="glass pointer-events-auto flex items-start gap-3 p-3.5"
               style={{ borderColor: `${color}59` }}
             >
-              <span
-                className="mt-0.5 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                style={{ background: color, boxShadow: `0 0 12px ${color}` }}
-              />
+              <Icon size={18} className="mt-0.5 shrink-0" style={{ color }} />
               <span className="text-fg text-sm leading-snug">{t.message}</span>
               <button
                 type="button"
-                className="ghost ml-auto -mr-1 -mt-1 shrink-0 px-2 py-1 text-xs"
+                className="ghost ml-auto -mr-1 -mt-1 shrink-0 px-1.5 py-1"
                 onClick={() => onDismiss(t.id)}
                 aria-label="Dismiss"
               >
-                ✕
+                <X size={14} />
               </button>
             </motion.div>
           );
