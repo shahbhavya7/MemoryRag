@@ -240,6 +240,26 @@ aurora; after logging in, a glass sidebar + top bar; smooth fade-and-rise when
 switching tabs; and fully readable text everywhere. Toggle "Reduce motion" in
 your OS accessibility settings and reload — the drift and transitions stop.
 
+### React Bits integration (overhaul pass)
+
+Later we layered in **React Bits** — an open-source (MIT) catalog of animated
+React components installed by *copying them in* (a shadcn-style registry), not as
+an npm package. We verified names against the live catalog and vendored the
+TypeScript+Tailwind variants under `src/components/reactbits/` (only edit: the
+`motion/react` import swapped to our `framer-motion`):
+
+- **Aurora** (Backgrounds) — a WebGL animated background, now *the* app-wide
+  backdrop (rendered once in `Background.tsx`; needs `ogl`). Skipped under
+  reduced-motion, falling back to the static CSS gradient.
+- **BlurText** (Text Animations) — the Login/Register titles blur-and-fade in
+  word by word.
+- **CountUp** (Text Animations) — the Evaluation accuracy headline counts up
+  from 0 to its value (replaced our hand-rolled version).
+
+Everything else (glass primitive, tokens, badges, transparency panel) stayed —
+React Bits is the *animation* layer on top of the same design system. See
+`frontend/DESIGN.md` §4b for the exact components + why each is safe.
+
 ---
 
 ## 9b — Chat + Routing Transparency

@@ -165,9 +165,9 @@ function FilterChip({
       style={
         active
           ? {
-              color: color ?? "var(--fg)",
-              borderColor: `${color ?? "#7fb6ff"}80`,
-              background: `${color ?? "#3b82f6"}26`,
+              color: color ?? "#e9d5ff",
+              borderColor: `${color ?? "#a855f7"}80`,
+              background: `${color ?? "#a855f7"}26`,
             }
           : undefined
       }

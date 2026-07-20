@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { GlassPanel } from "../components/GlassPanel";
+import BlurText from "../components/reactbits/BlurText";
 import { useAuth } from "../auth/AuthContext";
 
 export default function LoginPage() {
@@ -33,7 +34,12 @@ export default function LoginPage() {
           <div className="mb-6 font-bold tracking-wide">
             <span className="text-accent-2">◆</span> <span className="brand-gradient">MemoryRAG</span>
           </div>
-          <h1>Welcome back</h1>
+          <BlurText
+            text="Welcome back"
+            className="text-[1.7rem] font-bold tracking-tight leading-tight"
+            animateBy="words"
+            delay={120}
+          />
           <p className="text-fg-muted mt-1 mb-2">Log in to your MemoryRAG workspace.</p>
 
           <label className="field-label" htmlFor="email">

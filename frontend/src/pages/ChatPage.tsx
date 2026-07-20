@@ -167,7 +167,7 @@ export default function ChatPage() {
         {messages.map((m) =>
           m.role === "user" ? (
             <motion.div key={m.id} {...rise} className="flex justify-end">
-              <div className="max-w-[80%] rounded-2xl rounded-br-md border border-white/10 bg-[rgba(34,150,230,0.18)] px-4 py-2.5 text-fg">
+              <div className="max-w-[80%] rounded-2xl rounded-br-md border border-white/10 bg-[rgba(168,85,247,0.20)] px-4 py-2.5 text-fg">
                 {m.content}
               </div>
             </motion.div>

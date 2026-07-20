@@ -14,12 +14,12 @@
 @theme {
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
-  --color-accent: #3b82f6; /* primary — blue */
-  --color-accent-2: #22d3ee; /* secondary — cyan */
-  --color-fg: #f2f3f8;
-  --color-fg-muted: #c3c9d8;
-  --color-fg-faint: #8b92a6;
-  --color-bg-base: #07080f;
+  --color-accent: #a855f7; /* primary — violet */
+  --color-accent-2: #ec4899; /* secondary — magenta/pink */
+  --color-fg: #f4f2f8;
+  --color-fg-muted: #c7c3d4;
+  --color-fg-faint: #8b8598;
+  --color-bg-base: #000000;
 
   /* Per-memory-type accent tints (restrained; used only for badges). */
   --color-mt-document: #38bdf8;
@@ -33,33 +33,33 @@
 
 /* --- Raw CSS variables (the single source of truth for glass) --- */
 :root {
-  --bg-base: #060a12; /* deep blue-black, not neutral — reads as "cool" */
+  --bg-base: #000000; /* complete black canvas */
 
-  --fg: #eef4fb; /* body text — near-white, faint cool cast, never gray-on-glass */
-  --fg-muted: #b8c4d6; /* secondary labels — still AA on our dark glass */
-  --fg-faint: #7f8ba1; /* decorative only, never body copy */
+  --fg: #f4f2f8; /* body text — warm near-white, never gray-on-glass */
+  --fg-muted: #c7c3d4; /* secondary labels — still AA on our dark glass */
+  --fg-faint: #8b8598; /* decorative only, never body copy */
 
-  --accent: #3b82f6; /* blue */
-  --accent-2: #22d3ee; /* cyan */
+  --accent: #a855f7; /* violet */
+  --accent-2: #ec4899; /* magenta/pink */
   --danger: #fb7185;
   --ok: #34d399;
 
   /* THE glass recipe — change here, changes everywhere.
-     Cool-tinted: the sheen and top edge carry a faint cyan cast so the glass
-     reads as its own thing, not generic frosted white. */
+     Warm violet-tinted: the sheen and top edge carry a faint violet cast so the
+     glass reads as its own thing, not generic frosted white. */
   --glass-blur: 22px;
   --glass-radius: 20px;
-  --glass-base: rgba(13, 20, 33, 0.46); /* dark blue translucent body => readable text */
+  --glass-base: rgba(24, 16, 34, 0.46); /* dark violet translucent body => readable text */
   --glass-sheen: linear-gradient(
     135deg,
-    rgba(120, 220, 255, 0.14),
+    rgba(224, 190, 255, 0.14),
     rgba(255, 255, 255, 0.04) 40%,
-    rgba(59, 130, 246, 0.05) 100%
-  ); /* diagonal cool frost, cyan -> faint blue */
-  --glass-border: rgba(150, 210, 255, 0.16); /* cool hairline */
-  --glass-shadow: 0 10px 36px rgba(2, 8, 20, 0.5);
-  /* light top edge + a faint cyan rim light = the signature "specular" edge */
-  --glass-inset: inset 0 1px 0 rgba(190, 240, 255, 0.24), inset 0 0 0 1px rgba(80, 180, 255, 0.04);
+    rgba(236, 72, 153, 0.05) 100%
+  ); /* diagonal frost, violet -> faint magenta */
+  --glass-border: rgba(214, 184, 255, 0.16); /* violet hairline */
+  --glass-shadow: 0 12px 40px rgba(8, 2, 18, 0.55);
+  /* light top edge + a faint violet rim light = the signature "specular" edge */
+  --glass-inset: inset 0 1px 0 rgba(238, 218, 255, 0.22), inset 0 0 0 1px rgba(168, 85, 247, 0.05);
 
   /* Memory-type accents (mirror of the @theme values, for plain CSS use). */
   --mt-document: #38bdf8;
@@ -143,7 +143,7 @@ a:hover {
 
 /* A denser variant for text-heavy panels — extra contrast insurance. */
 .glass-strong {
-  --glass-base: rgba(15, 17, 28, 0.62);
+  --glass-base: rgba(22, 15, 32, 0.64);
 }
 
 /* Lite variant: the glass LOOK (sheen, hairline, shadow, radius) but NO
@@ -152,7 +152,7 @@ a:hover {
    so it stays readable without the blur doing any work. */
 .glass-lite {
   position: relative;
-  background-color: rgba(15, 20, 33, 0.66);
+  background-color: rgba(22, 15, 32, 0.66);
   background-image: var(--glass-sheen);
   border: 1px solid var(--glass-border);
   border-radius: var(--glass-radius);
@@ -163,10 +163,10 @@ a:hover {
    readable instead of see-through. */
 @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
   .glass {
-    background-color: rgba(15, 17, 28, 0.94);
+    background-color: rgba(22, 15, 32, 0.94);
   }
   .glass-strong {
-    background-color: rgba(13, 15, 24, 0.97);
+    background-color: rgba(18, 12, 27, 0.97);
   }
 }
 
@@ -181,10 +181,10 @@ a:hover {
   z-index: -1;
   overflow: hidden;
   background:
-    radial-gradient(1200px 800px at 12% -10%, rgba(34, 211, 238, 0.12), transparent 60%),
-    radial-gradient(1100px 750px at 112% 18%, rgba(59, 130, 246, 0.12), transparent 55%),
-    radial-gradient(900px 900px at 50% 120%, rgba(8, 145, 178, 0.10), transparent 55%),
-    linear-gradient(160deg, #071223 0%, var(--bg-base) 55%);
+    radial-gradient(1200px 800px at 12% -10%, rgba(168, 85, 247, 0.18), transparent 60%),
+    radial-gradient(1100px 750px at 112% 18%, rgba(236, 72, 153, 0.15), transparent 55%),
+    radial-gradient(900px 900px at 50% 120%, rgba(99, 102, 241, 0.13), transparent 55%),
+    #000000;
 }
 /* Fine grain so the backdrop never looks like a flat fill (premium, subtle). */
 .bg-aurora::after {
@@ -208,7 +208,7 @@ a:hover {
   height: 46vw;
   left: -8vw;
   top: -10vw;
-  background: radial-gradient(circle at 30% 30%, #22d3ee, transparent 70%);
+  background: radial-gradient(circle at 30% 30%, #a855f7, transparent 70%);
   animation: drift1 26s ease-in-out infinite alternate;
 }
 .bg-blob.b2 {
@@ -216,7 +216,7 @@ a:hover {
   height: 42vw;
   right: -6vw;
   top: 6vh;
-  background: radial-gradient(circle at 60% 40%, #3b82f6, transparent 70%);
+  background: radial-gradient(circle at 60% 40%, #ec4899, transparent 70%);
   animation: drift2 32s ease-in-out infinite alternate;
 }
 .bg-blob.b3 {
@@ -266,8 +266,8 @@ input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: color-mix(in srgb, var(--accent-2) 70%, transparent);
-  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.22);
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.25);
   background: rgba(255, 255, 255, 0.09);
 }
 select option {
@@ -308,14 +308,30 @@ button:disabled {
   cursor: not-allowed;
 }
 button.primary {
-  background: linear-gradient(135deg, var(--accent-2), var(--accent)); /* cyan -> blue */
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)); /* violet -> magenta */
   border-color: transparent;
-  color: #041018;
+  color: #ffffff;
   font-weight: 600;
-  box-shadow: 0 6px 22px rgba(34, 150, 230, 0.4);
+  box-shadow: 0 8px 26px rgba(168, 85, 247, 0.42);
 }
 button.primary:hover:not(:disabled) {
   filter: brightness(1.08);
+  box-shadow: 0 10px 32px rgba(168, 85, 247, 0.55);
+}
+/* Light sheen that sweeps across on hover (restrained: only on hover). */
+button.primary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 25%, rgba(255, 255, 255, 0.28) 50%, transparent 75%);
+  transform: translateX(-130%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+button.primary:hover:not(:disabled)::before {
+  transform: translateX(130%);
 }
 button.ghost {
   background: transparent;
@@ -340,7 +356,7 @@ button.ghost:hover:not(:disabled) {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(140, 210, 255, 0.10),
+    rgba(205, 165, 255, 0.12),
     transparent
   );
   transform: translateX(-100%);

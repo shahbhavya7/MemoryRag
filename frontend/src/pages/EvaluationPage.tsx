@@ -4,45 +4,25 @@
 // expected-vs-predicted with mismatches highlighted.
 
 import { motion, useReducedMotion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { api, ApiError } from "../api/client";
 import type { EvalResponse } from "../api/types";
 import { GlassCard } from "../components/GlassPanel";
 import MemoryBadge from "../components/MemoryBadge";
+import CountUp from "../components/reactbits/CountUp";
 import { memoryMeta } from "../lib/memoryTypes";
 
-function useCountUp(target: number, duration = 900): number {
-  const reduce = useReducedMotion();
-  const [value, setValue] = useState(0);
-  useEffect(() => {
-    if (reduce) {
-      setValue(target);
-      return;
-    }
-    let raf = 0;
-    let startTs = 0;
-    const tick = (now: number) => {
-      if (!startTs) startTs = now;
-      const t = Math.min(1, (now - startTs) / duration);
-      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
-      setValue(target * eased);
-      if (t < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, duration, reduce]);
-  return value;
-}
-
 function AccuracyStat({ data }: { data: EvalResponse }) {
-  const pct = useCountUp(data.accuracy * 100);
+  const pct = Math.round(data.accuracy * 100);
   return (
     <GlassCard strong className="flex items-center gap-6">
       <div>
         <div className="text-eyebrow">Routing accuracy</div>
-        <div className="mt-1 text-5xl font-extrabold tracking-tight">
-          <span className="brand-gradient">{Math.round(pct)}%</span>
+        <div className="mt-1 flex items-baseline text-5xl font-extrabold tracking-tight">
+          {/* React Bits CountUp animates the headline number from 0 → value. */}
+          <CountUp to={pct} duration={1.1} className="brand-gradient" />
+          <span className="brand-gradient">%</span>
         </div>
         <div className="text-fg-muted mt-1 text-sm">
           {data.correct} / {data.total} correct · prompt{" "}

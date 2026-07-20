@@ -34,17 +34,28 @@ export default function AppShell() {
             <NavLink
               key={item.to}
               to={item.to}
-              className={({ isActive }) =>
-                [
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 font-medium transition-colors",
-                  isActive
-                    ? "bg-[rgba(34,150,230,0.20)] text-fg shadow-[inset_0_1px_0_rgba(150,225,255,0.16)]"
-                    : "text-fg-muted hover:bg-white/8 hover:text-fg",
-                ].join(" ")
-              }
+              className="relative flex items-center gap-3 rounded-xl px-3 py-2.5 font-medium transition-colors hover:bg-white/6"
             >
-              <span className="w-5 text-center">{item.icon}</span>
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <motion.span
+                      layoutId="nav-active"
+                      className="absolute inset-0 rounded-xl"
+                      style={{
+                        background: "rgba(168,85,247,0.22)",
+                        boxShadow:
+                          "inset 0 1px 0 rgba(238,218,255,0.16), 0 0 20px rgba(168,85,247,0.18)",
+                      }}
+                      transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34 }}
+                    />
+                  )}
+                  <span className="relative z-10 w-5 text-center">{item.icon}</span>
+                  <span className={`relative z-10 ${isActive ? "text-fg" : "text-fg-muted"}`}>
+                    {item.label}
+                  </span>
+                </>
+              )}
             </NavLink>
           ))}
         </nav>

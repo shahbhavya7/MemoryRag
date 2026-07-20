@@ -19,18 +19,18 @@ Defined as CSS variables in `:root` and mirrored into Tailwind's theme
 
 | Token | Value | Use |
 |---|---|---|
-| `--bg-base` | `#060a12` | Page background base — a deep blue-black, not neutral |
-| `--fg` | `#eef4fb` | **Body text** — near-white with a faint cool cast, high contrast. Never gray body text on glass. |
-| `--fg-muted` | `#b8c4d6` | Secondary labels only (still AA on our dark glass) |
-| `--fg-faint` | `#7f8ba1` | Decorative text only, never body copy |
-| `--accent` | `#3b82f6` | **Primary** accent (blue) — interactive/active states |
-| `--accent-2` | `#22d3ee` | **Secondary** accent (cyan) — the lighter end of the gradient |
+| `--bg-base` | `#0a0711` | Page background base — near-black with a violet cast |
+| `--fg` | `#f4f2f8` | **Body text** — warm near-white, high contrast. Never gray body text on glass. |
+| `--fg-muted` | `#c7c3d4` | Secondary labels only (still AA on our dark glass) |
+| `--fg-faint` | `#8b8598` | Decorative text only, never body copy |
+| `--accent` | `#a855f7` | **Primary** accent (violet) — interactive/active states |
+| `--accent-2` | `#ec4899` | **Secondary** accent (magenta/pink) — the far end of the gradient |
 | `--danger` / `--ok` | `#fb7185` / `#34d399` | Error / success |
 
-**The identity is a cyan → blue gradient.** Primary buttons, the wordmark, and
-the aurora all run cyan (`#22d3ee`) into blue (`#3b82f6`). Two accents total —
-the glass + background do the heavy lifting; accents are punctuation (active nav,
-focus ring, primary button, wordmark, one badge tint).
+**The identity is a violet → magenta gradient.** Primary buttons, the wordmark,
+and the aurora all run violet (`#a855f7`) into magenta (`#ec4899`). Two accents
+total — the glass + background do the heavy lifting; accents are punctuation
+(active nav pill, focus ring, primary button, wordmark, one badge tint).
 
 ### Per-memory-type tints (badges only)
 
@@ -111,13 +111,38 @@ extra contrast insurance.
 
 ## 4. The animated background
 
-A `position: fixed` layer (`.bg-aurora`, z-index -1): a deep blue base + three
-soft radial gradients (cyan, blue, deep-cyan) + three heavily-blurred
-(`blur(90px)`) color blobs (cyan / blue / sky) that drift slowly (26–38s,
-`ease-in-out infinite alternate`), with a **fine grain overlay** on top
-(`.bg-aurora::after`). This is **regular** blur on colored shapes (cheap-ish,
-one fixed layer) — distinct from the panels' `backdrop-filter`. It's what gives
-the glass something to refract. Frozen under `prefers-reduced-motion`.
+Rendered **once** at the app root (`<Background/>` in `App.tsx`) — the single
+heavy animated background for the whole app (performance guardrail). It's a
+`position: fixed` layer (`.bg-aurora`, z-index -1) composed of:
+
+- a deep-blue CSS base + three soft radial gradients (cyan / blue / deep-cyan),
+- the **React Bits "Aurora"** WebGL component on top (violet→magenta→indigo
+  color stops), and
+- a **fine grain overlay** (`.bg-aurora::after`) so it never looks like a flat
+  fill.
+
+The CSS base doubles as the **reduced-motion fallback**: under
+`prefers-reduced-motion` we skip the animated WebGL layer entirely and show only
+the static gradient. The Aurora canvas's animation is the one allowed ambient
+loop; the panels' `backdrop-filter` blurs *this* background — that's what gives
+the glass something to refract.
+
+---
+
+## 4b. React Bits components used
+
+All vendored (copied-in) under `src/components/reactbits/`, per React Bits'
+copy-in install model (MIT license). Each was verified against the current
+catalog at reactbits.dev and pulled from the official shadcn-style registry
+(`public/r/<Name>-TS-TW.json`), TypeScript + Tailwind variant. The only edit is
+swapping the `motion/react` import to the `framer-motion` package already in
+this app (same library).
+
+| Component | Category | Where it's used | Extra dep |
+|---|---|---|---|
+| **Aurora** | Backgrounds | The app-wide animated background (`Background.tsx`) | `ogl` |
+| **BlurText** | Text Animations | Login/Register titles (words blur-fade in) | — (framer-motion) |
+| **CountUp** | Text Animations | Evaluation page — the accuracy headline animates 0→value | — (framer-motion) |
 
 ---
 

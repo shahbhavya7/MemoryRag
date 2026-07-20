@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { GlassPanel } from "../components/GlassPanel";
+import BlurText from "../components/reactbits/BlurText";
 import { useAuth } from "../auth/AuthContext";
 
 export default function RegisterPage() {
@@ -33,7 +34,12 @@ export default function RegisterPage() {
           <div className="mb-6 font-bold tracking-wide">
             <span className="text-accent-2">◆</span> <span className="brand-gradient">MemoryRAG</span>
           </div>
-          <h1>Create your account</h1>
+          <BlurText
+            text="Create your account"
+            className="text-[1.7rem] font-bold tracking-tight leading-tight"
+            animateBy="words"
+            delay={120}
+          />
           <p className="text-fg-muted mt-1 mb-2">Register to start building typed memories.</p>
 
           <label className="field-label" htmlFor="email">
