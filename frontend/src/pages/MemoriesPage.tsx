@@ -1,7 +1,7 @@
 // Memories browser (Phase 9c): a responsive grid of memory cards, filterable by
 // type. Filtering re-lays-out the grid with Framer Motion layout animations.
 // Cards use the `lite` glass (no backdrop-filter) since a grid of blurred cards
-// would be expensive — the blur guardrail.
+// would be expensive the blur guardrail.
 
 import { AnimatePresence, motion } from "framer-motion";
 import { LayoutGrid, RefreshCw, Tag, type LucideIcon } from "lucide-react";
@@ -69,7 +69,7 @@ export default function MemoriesPage() {
           <h1>Memories</h1>
           <p className="text-fg-muted mt-1">
             Stored in{" "}
-            <strong className="text-fg">{selectedProject?.name ?? "— no project —"}</strong>, across the
+            <strong className="text-fg">{selectedProject?.name ?? "no project —"}</strong>, across the
             five memory types.
           </p>
         </div>

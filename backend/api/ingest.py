@@ -1,4 +1,4 @@
-"""Phase 8 — endpoint to trigger git-history ingestion into memory.
+"""Phase 8 endpoint to trigger git-history ingestion into memory.
 
 POST /ingest/git {"repo_path": "...", "max_commits": 50}
 

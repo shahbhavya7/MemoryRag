@@ -1,4 +1,4 @@
-// Holds the logged-in user's JWT and email — in React state / memory only.
+// Holds the logged-in user's JWT and email in React state / memory only.
 // On refresh this resets (no localStorage yet, by design for this phase).
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";

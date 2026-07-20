@@ -41,7 +41,7 @@ set +a
 
 # --- 3. Make sure Postgres is up -------------------------------------------
 if ! pg_isready -h localhost -p 5432 >/dev/null 2>&1; then
-  echo "PostgreSQL isn't running — starting it via Homebrew..."
+  echo "PostgreSQL isn't running starting it via Homebrew..."
   brew services start postgresql@16
   # Give it a moment to come up before we hand off to uvicorn.
   until pg_isready -h localhost -p 5432 >/dev/null 2>&1; do sleep 1; done

@@ -1,4 +1,4 @@
-// The ambient animated backdrop — rendered ONCE at the app-shell level. Uses
+// The ambient animated backdrop rendered ONCE at the app-shell level. Uses
 // the React Bits "Aurora" WebGL background (vendored under reactbits/) over a
 // dark base + grain overlay (CSS in index.css). This is the single heavy
 // animated background for the whole app (performance guardrail).

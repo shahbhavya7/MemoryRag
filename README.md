@@ -4,7 +4,7 @@
 
 ### 1. Start PostgreSQL
 
-Option A — Docker:
+Option A Docker:
 
 ```bash
 docker-compose up -d
@@ -12,7 +12,7 @@ docker-compose up -d
 
 This starts Postgres 16 on `localhost:5432` with database `memoryrag` (user/password: `postgres`/`postgres`).
 
-Option B — local Homebrew Postgres (used to verify this phase):
+Option B local Homebrew Postgres (used to verify this phase):
 
 ```bash
 brew install postgresql@16
@@ -95,7 +95,7 @@ This adds `passlib` + `bcrypt` (password hashing) and `python-jose` (JWT tokens)
 
 ### 2. Set a `SECRET_KEY`
 
-Copy `.env.example` to `.env` if you haven't already, and set a `SECRET_KEY` (any random string works for local dev — this is what signs your JWTs):
+Copy `.env.example` to `.env` if you haven't already, and set a `SECRET_KEY` (any random string works for local dev this is what signs your JWTs):
 
 ```bash
 cp .env.example .env
@@ -126,7 +126,7 @@ It registers a throwaway user, logs in, creates a project, creates a chat under 
 
 ## Phase 3: Embeddings + vector search (Pinecone)
 
-Adds semantic document search: upload text, it gets chunked and embedded, and you can search it by meaning instead of exact keywords. Vectors are stored in **Pinecone**, a hosted/serverless vector database — no local vector store, no docker-compose changes.
+Adds semantic document search: upload text, it gets chunked and embedded, and you can search it by meaning instead of exact keywords. Vectors are stored in **Pinecone**, a hosted/serverless vector database no local vector store, no docker-compose changes.
 
 ### 1. Get a free Pinecone API key
 
@@ -146,9 +146,9 @@ export PINECONE_API_KEY="your-real-key-here"
 
 ### 2. Index creation (automatic, one-time)
 
-On startup, the app checks whether a serverless index named `memoryrag` (dimension 384, to match `BAAI/bge-small-en-v1.5`; metric `cosine`) already exists in your Pinecone account, and creates it if not. This check is guarded — it's safe to restart the app any number of times; the index is only ever created once and reused on every later run.
+On startup, the app checks whether a serverless index named `memoryrag` (dimension 384, to match `BAAI/bge-small-en-v1.5`; metric `cosine`) already exists in your Pinecone account, and creates it if not. This check is guarded it's safe to restart the app any number of times; the index is only ever created once and reused on every later run.
 
-We'll use additional **namespaces** within this same index (not separate indexes) for the other memory types added in Phase 5 — keeping everything on one index is important because Pinecone's free tier caps how many serverless indexes you can have, but namespaces within an index are effectively free and keep each memory type's vectors isolated from the others.
+We'll use additional **namespaces** within this same index (not separate indexes) for the other memory types added in Phase 5 keeping everything on one index is important because Pinecone's free tier caps how many serverless indexes you can have, but namespaces within an index are effectively free and keep each memory type's vectors isolated from the others.
 
 The first request that touches embeddings (upload or search) will also download the `BAAI/bge-small-en-v1.5` model (~130MB) from Hugging Face and cache it under `~/.cache/huggingface`. That first request will be noticeably slower; every request after that is fast.
 
@@ -157,9 +157,9 @@ The first request that touches embeddings (upload or search) will also download 
 | Method | Path                | Auth required | Description                                                       |
 |--------|---------------------|----------------|---------------------------------------------------------------------|
 | POST   | `/documents/upload` | No             | Upload raw `text` or a `file` (multipart form), chunked + embedded |
-| POST   | `/documents/search`  | No            | `{query, top_k}` — returns the most semantically similar chunks     |
+| POST   | `/documents/search`  | No            | `{query, top_k}` returns the most semantically similar chunks     |
 
-`/documents/upload` takes multipart form fields: `project_id` (int), and either `text` (string) or `file` (a text file upload) — not both.
+`/documents/upload` takes multipart form fields: `project_id` (int), and either `text` (string) or `file` (a text file upload) not both.
 
 Search results' `score` is Pinecone's cosine similarity: **higher means more similar** (this is the opposite convention from a "distance," where lower would mean closer).
 
@@ -186,18 +186,18 @@ uvicorn backend.main:app --reload
 python demo/demo_phase3.py
 ```
 
-It uploads a made-up-topic document (Glimmerwood squirrels) plus an unrelated distractor document (a kite tournament), then runs several search queries — including one that fully paraphrases the source text with no shared keywords — and confirms the relevant squirrel chunk always ranks above the unrelated one, proving the search is genuinely semantic rather than keyword matching.
+It uploads a made-up-topic document (Glimmerwood squirrels) plus an unrelated distractor document (a kite tournament), then runs several search queries including one that fully paraphrases the source text with no shared keywords and confirms the relevant squirrel chunk always ranks above the unrelated one, proving the search is genuinely semantic rather than keyword matching.
 
 ## Phase 4: Basic RAG chat (LangChain + LLM)
 
-Wires up a simple **RAG** (Retrieval-Augmented Generation) chat: embed the question → retrieve the most relevant chunks *for that project* → build a prompt with those chunks → call an LLM → return the answer plus the sources it was grounded in. No memory routing yet (that's Phase 5+) — this is a single-collection RAG baseline.
+Wires up a simple **RAG** (Retrieval-Augmented Generation) chat: embed the question → retrieve the most relevant chunks *for that project* → build a prompt with those chunks → call an LLM → return the answer plus the sources it was grounded in. No memory routing yet (that's Phase 5+) this is a single-collection RAG baseline.
 
 ### 1. Get an LLM API key
 
 Set an OpenAI-compatible LLM provider via env vars. Two supported out of the box:
 
-- **Groq** (free, fast) — get a key at [console.groq.com/keys](https://console.groq.com/keys)
-- **OpenRouter** — get a key at [openrouter.ai/keys](https://openrouter.ai/keys)
+- **Groq** (free, fast) get a key at [console.groq.com/keys](https://console.groq.com/keys)
+- **OpenRouter** get a key at [openrouter.ai/keys](https://openrouter.ai/keys)
 
 In `.env`:
 
@@ -207,7 +207,7 @@ LLM_API_KEY=your-real-key
 # LLM_MODEL=...             # optional; sensible per-provider default is used if unset
 ```
 
-Both providers expose OpenAI-compatible APIs, so a single LangChain `ChatOpenAI` client handles either — only the base URL and key change.
+Both providers expose OpenAI-compatible APIs, so a single LangChain `ChatOpenAI` client handles either only the base URL and key change.
 
 ### New endpoint
 
@@ -232,7 +232,7 @@ This adds `langchain-openai` (the LangChain LLM client + prompt/chain plumbing).
 python demo/demo_phase4.py     # in a second terminal
 ```
 
-The demo uploads a short made-up document (the Aurora Tram), asks two questions answerable from it, and prints **both the answer and the exact source chunks used** — so you can see the answer is grounded in the retrieved text. It then asks one question the document *can't* answer, to show the model declines ("I don't know based on the available documents") instead of hallucinating.
+The demo uploads a short made-up document (the Aurora Tram), asks two questions answerable from it, and prints **both the answer and the exact source chunks used** so you can see the answer is grounded in the retrieved text. It then asks one question the document *can't* answer, to show the model declines ("I don't know based on the available documents") instead of hallucinating.
 
 ## Phase 5: Multi-memory split (five memory types)
 
@@ -248,7 +248,7 @@ Splits the single vector store into **five isolated memory types**, each in its 
 
 Using **namespaces within one index** (rather than five separate indexes) keeps everything on Pinecone's free tier while still isolating each type's vectors completely. Two new Postgres tables track things relationally: `memory_types` (the five reference rows, auto-seeded on startup) and `memories` (each stored entry, linked to its type and to its Pinecone `vector_id`).
 
-There's no memory *routing* yet — you say which type to write/search explicitly. Automatic routing ("which memory should answer this?") is Phase 6.
+There's no memory *routing* yet you say which type to write/search explicitly. Automatic routing ("which memory should answer this?") is Phase 6.
 
 ### New endpoints
 
@@ -265,11 +265,11 @@ python demo/seed_phase5.py        # optional: seed 2-3 example entries per type
 python demo/demo_phase5.py        # seeds its own entries, then proves isolation
 ```
 
-`demo_phase5.py` runs a 5×5 matrix: it searches *every* namespace with *every* type's query and confirms each namespace only ever returns its own type — even when the query semantically matches a different type's content. That proves the types are structurally isolated, not merely labeled.
+`demo_phase5.py` runs a 5×5 matrix: it searches *every* namespace with *every* type's query and confirms each namespace only ever returns its own type even when the query semantically matches a different type's content. That proves the types are structurally isolated, not merely labeled.
 
 ## Phase 6: LangGraph + Adaptive Memory Routing
 
-The core of the project. `/chat` is now a **LangGraph agent** that decides *which* memory type(s) a question needs, retrieves only from those, and answers — instead of always searching one collection.
+The core of the project. `/chat` is now a **LangGraph agent** that decides *which* memory type(s) a question needs, retrieves only from those, and answers instead of always searching one collection.
 
 The graph has eight nodes, run in order:
 
@@ -278,15 +278,15 @@ receive_query → intent_detection → memory_router → retriever
    → re_ranker → context_builder → llm_response → memory_update
 ```
 
-- **intent_detection** — an LLM classifier picks one or more of `[document, code, decision, workflow, conversation]`.
-- **memory_router** — turns those types into the Pinecone namespace(s) to search.
-- **retriever** — queries only the selected namespace(s).
-- **re_ranker** — merges hits from multiple namespaces and sorts by score.
-- **context_builder** — assembles the prompt with a hard character-limit truncation (Phase 7 makes this smarter).
-- **llm_response** — generates the grounded answer.
-- **memory_update** — if the user's message *states* a new decision/fact (not just asks), writes it back to the right memory type.
+- **intent_detection** an LLM classifier picks one or more of `[document, code, decision, workflow, conversation]`.
+- **memory_router** turns those types into the Pinecone namespace(s) to search.
+- **retriever** queries only the selected namespace(s).
+- **re_ranker** merges hits from multiple namespaces and sorts by score.
+- **context_builder** assembles the prompt with a hard character-limit truncation (Phase 7 makes this smarter).
+- **llm_response** generates the grounded answer.
+- **memory_update** if the user's message *states* a new decision/fact (not just asks), writes it back to the right memory type.
 
-`/chat` `{project_id, message}` now returns `{answer, memory_types, sources, memory_update}` — where `memory_types` is the router's decision (the proof point for this phase).
+`/chat` `{project_id, message}` now returns `{answer, memory_types, sources, memory_update}` where `memory_types` is the router's decision (the proof point for this phase).
 
 ### Prove the routing
 
@@ -295,7 +295,7 @@ receive_query → intent_detection → memory_router → retriever
 python demo/demo_phase6.py
 ```
 
-`demo_phase6.py` seeds one distinctive entry per memory type, then asks five questions — each aimed at a different type (a "why did we choose X" → decision, a "how do we release" → workflow, etc.) — and prints **which memory type the router picked** for each, asserting all five route correctly. A bonus step then *states* a new decision and shows the `memory_update` node saving it back to `decision` memory.
+`demo_phase6.py` seeds one distinctive entry per memory type, then asks five questions each aimed at a different type (a "why did we choose X" → decision, a "how do we release" → workflow, etc.) and prints **which memory type the router picked** for each, asserting all five route correctly. A bonus step then *states* a new decision and shows the `memory_update` node saving it back to `decision` memory.
 
 ## Phase 7: Prompt versioning + context engineering + evaluation
 
@@ -305,7 +305,7 @@ Three upgrades to make the system tunable and *measurable*:
 
 **2. Real context engineering** ([backend/llm/context.py](backend/llm/context.py)). The old blunt character-limit truncation is replaced with **token counting** (`tiktoken`) and a **token budget** (`CONTEXT_TOKEN_BUDGET`, default 1200) split across *system prompt / conversation history / retrieved context*. History and chunks are fit into their share; the lowest-scored chunks are dropped first when space runs out.
 
-**3. Evaluation** — a real routing-accuracy metric, not a vibe check.
+**3. Evaluation** a real routing-accuracy metric, not a vibe check.
 
 ### New endpoint
 
@@ -322,13 +322,13 @@ set -a; source .env; set +a        # eval needs LLM_API_KEY
 python demo/eval_phase7.py
 ```
 
-`eval_phase7.py` runs 10 hand-labeled `question → expected memory type` pairs through the router and prints **routing accuracy** — for *both* prompt versions, so you can see as a number whether a prompt change actually helped. This is the project's first real retrieval-quality metric. (Routing uses an LLM classifier, so exact numbers vary slightly run to run.)
+`eval_phase7.py` runs 10 hand-labeled `question → expected memory type` pairs through the router and prints **routing accuracy** for *both* prompt versions, so you can see as a number whether a prompt change actually helped. This is the project's first real retrieval-quality metric. (Routing uses an LLM classifier, so exact numbers vary slightly run to run.)
 
 ## Phase 8: Git integration → Code Memory
 
-Real **commit history** becomes searchable memory. Point MemoryRAG at a local git repo; it walks the commit log, turns each commit (message + a capped diff) into text, embeds it, and stores it in **code memory** — and additionally in **decision memory** when the commit message reads like it explains a *why* (e.g. "we switched to X because…"). Every entry's `source_ref` is the **commit hash**, so an answer can cite the exact commit(s) it came from.
+Real **commit history** becomes searchable memory. Point MemoryRAG at a local git repo; it walks the commit log, turns each commit (message + a capped diff) into text, embeds it, and stores it in **code memory** and additionally in **decision memory** when the commit message reads like it explains a *why* (e.g. "we switched to X because…"). Every entry's `source_ref` is the **commit hash**, so an answer can cite the exact commit(s) it came from.
 
-Built with **GitPython**. The storage path is the same shared `store_memory` writer from Phase 5 — Phase 8 only adds a new *source* of memories.
+Built with **GitPython**. The storage path is the same shared `store_memory` writer from Phase 5 Phase 8 only adds a new *source* of memories.
 
 ### New endpoint
 
@@ -352,4 +352,4 @@ python demo/demo_phase8.py http://localhost:8010
 
 `demo_phase8.py` ingests **this project's own git history**, then asks a few "what changed…" / "what was done…" questions and prints each answer **plus the commit hash(es) it cited**.
 
-> ⚠️ Git diff chunks are large (~800 tokens each). For grounded answers, run with a healthy `CONTEXT_TOKEN_BUDGET` (e.g. `1500`–`2000`). With a tiny budget a whole commit won't fit the context slice, and answers fall back to "I don't know" — that's the Phase 7 token budget doing its job, not a Phase 8 bug.
+> ⚠️ Git diff chunks are large (~800 tokens each). For grounded answers, run with a healthy `CONTEXT_TOKEN_BUDGET` (e.g. `1500`–`2000`). With a tiny budget a whole commit won't fit the context slice, and answers fall back to "I don't know" that's the Phase 7 token budget doing its job, not a Phase 8 bug.

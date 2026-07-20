@@ -1,7 +1,7 @@
 """Real context engineering: token counting + a token budget split across
 system prompt / conversation history / retrieved context.
 
-Phase 6 truncated context by a raw CHARACTER count, which is crude — a
+Phase 6 truncated context by a raw CHARACTER count, which is crude a
 character isn't the unit an LLM actually pays for or is limited by. Phase 7
 counts real TOKENS (via tiktoken) and divides a fixed token budget between the
 three things competing for space in the prompt, keeping the highest-value
@@ -13,7 +13,7 @@ import os
 import tiktoken
 
 # cl100k_base is OpenAI's tokenizer. Our LLM is a Llama model via Groq, so this
-# is an approximation of its true token counts — but it's a stable, good-enough
+# is an approximation of its true token counts but it's a stable, good-enough
 # yardstick for *budgeting* (the goal is a consistent limit, not billing).
 _ENCODING = tiktoken.get_encoding("cl100k_base")
 

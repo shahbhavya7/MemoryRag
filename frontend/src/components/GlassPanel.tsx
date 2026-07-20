@@ -8,7 +8,7 @@ import { motion, useReducedMotion, type HTMLMotionProps } from "framer-motion";
 interface GlassPanelProps extends HTMLMotionProps<"div"> {
   /** Denser tint for text-heavy panels (extra contrast insurance). */
   strong?: boolean;
-  /** Glass LOOK without backdrop-filter — for grids/lists (blur is expensive). */
+  /** Glass LOOK without backdrop-filter for grids/lists (blur is expensive). */
   lite?: boolean;
   /** Play the mount animation (on by default). */
   animateIn?: boolean;
@@ -43,7 +43,7 @@ export function GlassPanel({
   );
 }
 
-/** A GlassPanel with card padding baked in — the default surface for content. */
+/** A GlassPanel with card padding baked in the default surface for content. */
 export function GlassCard({ className = "", ...props }: GlassPanelProps) {
   return <GlassPanel className={`p-5 ${className}`} {...props} />;
 }

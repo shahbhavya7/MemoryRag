@@ -84,7 +84,7 @@ def list_memories(
 @router.post("/search", response_model=MemorySearchResponse)
 def search_memory(payload: MemorySearchRequest, db: Session = Depends(get_db)):
     # Look up the namespace for the requested type and search ONLY that
-    # namespace — this is the direct, un-routed search Phase 5 is about.
+    # namespace this is the direct, un-routed search Phase 5 is about.
     memory_type = _get_memory_type_or_400(db, payload.memory_type)
     query_embedding = embed_query(payload.query)
     results = search_memories(

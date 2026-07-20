@@ -8,7 +8,7 @@ PINECONE_API_KEY *and* LLM_PROVIDER + LLM_API_KEY set.
 
 The point of this demo is to make *grounding* visible: we upload a short
 made-up document, ask questions about it, and print both the LLM's answer
-AND the exact source chunks it was given — so you can see the answer came
+AND the exact source chunks it was given so you can see the answer came
 from the retrieved context, not from the model's imagination. The last
 question deliberately asks about something NOT in the document, so you can
 see the model decline to answer rather than hallucinate.
@@ -42,7 +42,7 @@ GROUNDED_QUESTIONS = [
     "Why doesn't the tram run during thunderstorms?",
 ]
 
-# This is NOT covered by the document — a well-behaved grounded system should
+# This is NOT covered by the document a well-behaved grounded system should
 # say it doesn't know, rather than inventing an answer.
 OUT_OF_SCOPE_QUESTION = "Who invented the Aurora Tram and in what year?"
 
@@ -99,7 +99,7 @@ def main() -> None:
 
     print(
         "\n\nDone. Notice the first two answers match the source chunks shown, "
-        "while the last one is declined rather than made up — that's grounding working."
+        "while the last one is declined rather than made up that's grounding working."
     )
 
 

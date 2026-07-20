@@ -1,5 +1,5 @@
 /* ============================================================================
-   MemoryRAG — Liquid-glass design system (Phase 9-design)
+   MemoryRAG Liquid-glass design system (Phase 9-design)
 
    ONE source of truth for the glass look. Every surface uses the `.glass`
    primitive (via the <GlassPanel> component) so radius/blur/border/shadow are
@@ -14,8 +14,8 @@
 @theme {
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
-  --color-accent: #a855f7; /* primary — violet */
-  --color-accent-2: #7c3aed; /* secondary — deep violet */
+  --color-accent: #a855f7; /* primary violet */
+  --color-accent-2: #7c3aed; /* secondary deep violet */
   --color-fg: #f4f2f8;
   --color-fg-muted: #c7c3d4;
   --color-fg-faint: #8b8598;
@@ -35,8 +35,8 @@
 :root {
   --bg-base: #000000; /* complete black canvas */
 
-  --fg: #f4f2f8; /* body text — warm near-white, never gray-on-glass */
-  --fg-muted: #c7c3d4; /* secondary labels — still AA on our dark glass */
+  --fg: #f4f2f8; /* body text warm near-white, never gray-on-glass */
+  --fg-muted: #c7c3d4; /* secondary labels still AA on our dark glass */
   --fg-faint: #8b8598; /* decorative only, never body copy */
 
   --accent: #a855f7; /* violet */
@@ -44,7 +44,7 @@
   --danger: #fb7185;
   --ok: #34d399;
 
-  /* THE glass recipe — change here, changes everywhere.
+  /* THE glass recipe change here, changes everywhere.
      Warm violet-tinted: the sheen and top edge carry a faint violet cast so the
      glass reads as its own thing, not generic frosted white. */
   --glass-blur: 22px;
@@ -128,7 +128,7 @@ a:hover {
 }
 
 /* ============================================================================
-   The glass primitive — the ONLY place backdrop-filter is defined.
+   The glass primitive the ONLY place backdrop-filter is defined.
    ========================================================================== */
 .glass {
   position: relative;
@@ -141,13 +141,13 @@ a:hover {
   backdrop-filter: blur(var(--glass-blur)) saturate(160%);
 }
 
-/* A denser variant for text-heavy panels — extra contrast insurance. */
+/* A denser variant for text-heavy panels extra contrast insurance. */
 .glass-strong {
   --glass-base: rgba(22, 15, 32, 0.64);
 }
 
 /* Lite variant: the glass LOOK (sheen, hairline, shadow, radius) but NO
-   backdrop-filter — for grids/lists where many blurred elements would be
+   backdrop-filter for grids/lists where many blurred elements would be
    expensive (guardrail: blur only on a few large panels). Higher base opacity
    so it stays readable without the blur doing any work. */
 .glass-lite {
@@ -171,7 +171,7 @@ a:hover {
 }
 
 /* ============================================================================
-   Ambient animated background — the "something behind the glass to blur".
+   Ambient animated background the "something behind the glass to blur".
    A dark base + a few slowly drifting blurred color blobs (the one allowed
    infinite loop). This is regular blur on colored shapes, NOT backdrop-filter.
    ========================================================================== */
@@ -382,7 +382,7 @@ button.ghost:hover:not(:disabled) {
 }
 
 /* ============================================================================
-   Motion guardrail: honour prefers-reduced-motion — kill ambient drift and
+   Motion guardrail: honour prefers-reduced-motion kill ambient drift and
    any non-essential animation/transition.
    ========================================================================== */
 @media (prefers-reduced-motion: reduce) {

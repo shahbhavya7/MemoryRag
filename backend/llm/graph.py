@@ -6,7 +6,7 @@ Flow (each is a node):
 
 The whole point of this phase is the ROUTING: intent_detection classifies the
 query into one or more memory types, and memory_router turns that into the
-Pinecone namespace(s) we actually search — so we retrieve only from the
+Pinecone namespace(s) we actually search so we retrieve only from the
 relevant memory instead of everything.
 """
 
@@ -85,7 +85,7 @@ _MEMORY_UPDATE_PROMPT = ChatPromptTemplate.from_messages(
             "You decide whether a chat exchange should be saved as a NEW long-term "
             "memory.\n"
             "Rule: look at the USER'S MESSAGE only. If it is a QUESTION (asks "
-            "what/why/how/who/when, or ends with '?'), set save=false — no matter "
+            "what/why/how/who/when, or ends with '?'), set save=false no matter "
             "what the answer says. Save=true ONLY when the user's message is a "
             "DECLARATIVE statement that introduces new information worth keeping "
             "(e.g. 'We decided to...', 'The new release process is...', "
@@ -111,7 +111,7 @@ def _extract_json(raw: str) -> dict:
 
 def receive_query(state: GraphState) -> dict:
     # Normalize input and set defaults. (A real system might also strip PII,
-    # enforce length limits, etc. — kept minimal here.)
+    # enforce length limits, etc. kept minimal here.)
     return {
         "query": state["query"].strip(),
         "final_top_k": state.get("final_top_k") or DEFAULT_FINAL_TOP_K,
@@ -141,7 +141,7 @@ def retriever(state: GraphState) -> dict:
 
 
 def re_ranker(state: GraphState) -> dict:
-    # If more than one namespace was hit, results are interleaved — merge them
+    # If more than one namespace was hit, results are interleaved merge them
     # and sort by score (cosine similarity is comparable across namespaces
     # since every type uses the same embedding model + metric), keep the best.
     ranked = sorted(state["retrieved"], key=lambda r: r["score"], reverse=True)

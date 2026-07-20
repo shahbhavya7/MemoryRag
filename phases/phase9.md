@@ -1,22 +1,22 @@
-# Phase 9 — The Frontend Dashboard (Beginner Notes)
+# Phase 9 The Frontend Dashboard (Beginner Notes)
 
 This is our first **frontend** phase. Everything before now was a backend you
 poked with curl or Swagger. Phase 9 builds a real web UI (React) that logs in,
-talks to the FastAPI backend, and — the whole point — makes the **routing** and
+talks to the FastAPI backend, and the whole point makes the **routing** and
 **context engineering** *visible on screen*.
 
 It's big, so we build it in sub-steps and get each one **rendering** before
 adding the next (same discipline as the backend phases):
 
-- **9a** — scaffold + auth + app shell + project selector ✅
-- **9-design** — liquid-glass design system + restyle the shell ✅ (see below)
-- **9b** — Chat page + routing-transparency panel ✅
-- **9c** — Memories browser + Upload page ✅
-- **9d** — Evaluation dashboard ✅
+- **9a** scaffold + auth + app shell + project selector ✅
+- **9-design** liquid-glass design system + restyle the shell ✅ (see below)
+- **9b** Chat page + routing-transparency panel ✅
+- **9c** Memories browser + Upload page ✅
+- **9d** Evaluation dashboard ✅
 
 ---
 
-## 9a — Scaffold, Auth, App Shell, Project Selector
+## 9a Scaffold, Auth, App Shell, Project Selector
 
 ### What we built
 
@@ -30,25 +30,25 @@ adding the next (same discipline as the backend phases):
 
 ### New words used in this phase
 
-- **Frontend / backend** — the frontend is the part that runs in the *browser*
+- **Frontend / backend** the frontend is the part that runs in the *browser*
   (what the user sees); the backend is the API + database we built earlier.
-- **React** — a JavaScript library for building UIs out of reusable
+- **React** a JavaScript library for building UIs out of reusable
   "components" (functions that return HTML-like markup called JSX).
-- **Vite** — the dev server + build tool. `npm run dev` gives you a live-
+- **Vite** the dev server + build tool. `npm run dev` gives you a live-
   reloading site at `http://localhost:5173`.
-- **TypeScript** — JavaScript with types. Catches "you passed the wrong shape"
+- **TypeScript** JavaScript with types. Catches "you passed the wrong shape"
   bugs before the app even runs.
-- **Component** — one reusable piece of UI (e.g. `<ProjectSelector />`).
-- **Props / state** — *props* are inputs passed into a component; *state* is
+- **Component** one reusable piece of UI (e.g. `<ProjectSelector />`).
+- **Props / state** *props* are inputs passed into a component; *state* is
   data a component remembers and can change (via `useState`).
-- **Context** — React's way to share state (like "the logged-in user") across
+- **Context** React's way to share state (like "the logged-in user") across
   many components without passing it through every level by hand.
-- **Route / router** — maps a URL path (`/chat`) to which page component shows.
+- **Route / router** maps a URL path (`/chat`) to which page component shows.
   We use `react-router-dom`.
-- **CORS (Cross-Origin Resource Sharing)** — a browser security rule: a page on
+- **CORS (Cross-Origin Resource Sharing)** a browser security rule: a page on
   `localhost:5173` may not call an API on `localhost:8010` *unless the API says
   it's allowed*. The backend must opt-in. **Nothing works until this is done.**
-- **JWT / Bearer token** — the login token from Phase 2. We send it on every
+- **JWT / Bearer token** the login token from Phase 2. We send it on every
   request as an `Authorization: Bearer <token>` header to prove who we are.
 
 ### The CORS change (backend)
@@ -69,7 +69,7 @@ app.add_middleware(
 
 Before a "real" POST, the browser quietly sends an `OPTIONS` **preflight** to
 ask "am I allowed?". This middleware answers "yes, from 5173." Without it, the
-browser blocks the call before your code ever sees it — the classic "it works
+browser blocks the call before your code ever sees it the classic "it works
 in curl but not in the browser" trap.
 
 ### The frontend files (one line each)
@@ -87,14 +87,14 @@ in curl but not in the browser" trap.
 | `src/pages/*Page.tsx` | The four feature pages (placeholders until 9b–9d) |
 | `src/App.tsx` | The route table (public auth routes + protected shell routes) |
 | `src/main.tsx` | Mounts the app, wraps it in Router + Auth + Project providers |
-| `src/index.css` | The whole look — one hand-written stylesheet, no framework |
+| `src/index.css` | The whole look one hand-written stylesheet, no framework |
 
 ### Why the token is "in memory only"
 
 The prompt asked for the JWT in memory/context, **not** localStorage, for now.
 So we keep it in a module variable in `client.ts` (mirrored by React state in
 `AuthContext`). Trade-off: **refreshing the page logs you out.** That's the
-expected behavior for this phase — persisting login safely (refresh tokens,
+expected behavior for this phase persisting login safely (refresh tokens,
 httpOnly cookies) is a later concern.
 
 ### How the request flow works
@@ -126,17 +126,17 @@ drove the exact browser flow with curl against a fresh backend:
 
 `React.FormEvent` was used without importing React. With React 19's automatic
 JSX runtime, `React` isn't in scope by default, so TypeScript couldn't find it.
-Fix: import the type by name — `import { useState, type FormEvent } from "react"`
-— and use `FormEvent` directly. Lesson: in modern React you import the specific
+Fix: import the type by name `import { useState, type FormEvent } from "react"`
+and use `FormEvent` directly. Lesson: in modern React you import the specific
 hooks/types you use; there's no implicit global `React`.
 
 ### Try it yourself
 
 ```bash
-# Terminal 1 — backend (repo root)
+# Terminal 1 backend (repo root)
 ./run.sh
 
-# Terminal 2 — frontend
+# Terminal 2 frontend
 cd frontend && npm install && npm run dev
 ```
 
@@ -146,18 +146,18 @@ shows on each (still empty) feature page, proving project scoping is wired up.
 
 ---
 
-## 9-design — The Liquid-Glass Design System
+## 9-design The Liquid-Glass Design System
 
 ### What we built
 
 A cohesive **glassmorphism** design system and a restyle of the existing shell
-(sidebar, top bar, login/register) to use it. **No new features** — this is a
+(sidebar, top bar, login/register) to use it. **No new features** this is a
 look-and-feel pass that every later page (9b–9d) inherits.
 
 - Installed + configured **Tailwind CSS v4** (`@tailwindcss/vite`) and **Framer
   Motion**.
 - One reusable **`<GlassPanel>` / `<GlassCard>`** primitive.
-- A dark **animated aurora background** (drifting blurred blobs) — glass needs
+- A dark **animated aurora background** (drifting blurred blobs) glass needs
   something behind it to blur.
 - A restrained **2-accent palette** + Inter typography.
 - Enforced guardrails (contrast, blur cost, motion restraint, fallback).
@@ -165,27 +165,27 @@ look-and-feel pass that every later page (9b–9d) inherits.
 
 ### New words used in this phase
 
-- **Glassmorphism / liquid glass** — a UI style where panels look like frosted
+- **Glassmorphism / liquid glass** a UI style where panels look like frosted
   glass: semi-transparent, blurring whatever is behind them, with a bright hairline
   edge and soft shadow.
-- **`backdrop-filter: blur()`** — the CSS that actually blurs *what's behind* an
+- **`backdrop-filter: blur()`** the CSS that actually blurs *what's behind* an
   element (as opposed to `filter: blur()`, which blurs the element itself). This
   is what makes glass "glass."
-- **Design token** — a named value (a color, a radius, a blur amount) defined
+- **Design token** a named value (a color, a radius, a blur amount) defined
   once and reused, so the whole app changes consistently from one place.
-- **Tailwind CSS** — a utility-class styling system (`flex`, `p-4`, `text-fg`).
+- **Tailwind CSS** a utility-class styling system (`flex`, `p-4`, `text-fg`).
   v4 configures its theme in CSS via `@theme`, no `tailwind.config.js` needed.
-- **Framer Motion** — a React animation library; you make an element animated by
+- **Framer Motion** a React animation library; you make an element animated by
   using `<motion.div>` with `initial` / `animate` / `exit` props.
-- **`prefers-reduced-motion`** — an OS accessibility setting; we detect it and
+- **`prefers-reduced-motion`** an OS accessibility setting; we detect it and
   switch off non-essential animation.
-- **WCAG AA** — an accessibility contrast standard: text must be clearly legible
+- **WCAG AA** an accessibility contrast standard: text must be clearly legible
   against its background. Our guardrail.
 
 ### The single most important idea: one primitive
 
-Everything glass comes from **one** `.glass` class in `index.css` — the only
-place `backdrop-filter` is defined — wrapped by **one** React component,
+Everything glass comes from **one** `.glass` class in `index.css` the only
+place `backdrop-filter` is defined wrapped by **one** React component,
 `<GlassPanel>`. Change the recipe once, the whole app changes. This is what the
 "Consistency" guardrail means in practice: no page invents its own panel.
 
@@ -200,17 +200,17 @@ highlight still give the frosted, light-edged glass look. Best of both.
 
 ### The guardrails we enforced (and why)
 
-1. **Contrast** — body text is near-white (`--fg`) on dark glass → passes AA
+1. **Contrast** body text is near-white (`--fg`) on dark glass → passes AA
    even over the brightest blob. No gray body text on glass.
-2. **Blur is expensive** — `backdrop-filter` only on a few large panels
+2. **Blur is expensive** `backdrop-filter` only on a few large panels
    (sidebar, top bar, page cards). Buttons/badges/inputs use plain translucent
    fills. And **no nested blur**: the area between the glass shell and the page
    cards is transparent, so a card never sits inside another blurred panel.
-3. **Motion restraint** — Framer Motion for route transitions (fade + rise),
+3. **Motion restraint** Framer Motion for route transitions (fade + rise),
    panel mount, and hover lifts; 150–400ms, gentle easing, no bounce. The only
    infinite animation is the slow background drift. All disabled under
    `prefers-reduced-motion`.
-4. **Fallback** — `@supports not (backdrop-filter…)` makes panels near-opaque so
+4. **Fallback** `@supports not (backdrop-filter…)` makes panels near-opaque so
    the UI degrades to *readable* instead of *transparent-mush*.
 
 ### Files
@@ -218,7 +218,7 @@ highlight still give the frosted, light-edged glass look. Best of both.
 | File | What it does |
 |---|---|
 | `src/index.css` | Tokens (`:root` + `@theme`), the `.glass` primitive + fallback, the aurora keyframes, reduced-motion rules |
-| `src/components/GlassPanel.tsx` | `<GlassPanel>` / `<GlassCard>` — the one glass surface, with a Framer-Motion mount animation |
+| `src/components/GlassPanel.tsx` | `<GlassPanel>` / `<GlassCard>` the one glass surface, with a Framer-Motion mount animation |
 | `src/components/Background.tsx` | The fixed animated aurora backdrop |
 | `vite.config.ts` | Adds the Tailwind v4 Vite plugin |
 | `frontend/DESIGN.md` | The full written spec |
@@ -229,7 +229,7 @@ highlight still give the frosted, light-edged glass look. Best of both.
 `npm run build` compiled cleanly (441 modules). We confirmed the **compiled
 CSS** actually contains the system: `.glass`, `backdrop-filter`,
 `saturate(160%)`, the `bg-aurora` layer, the `drift1` keyframes, the
-`@supports not` fallback, and the `prefers-reduced-motion` block — all present.
+`@supports not` fallback, and the `prefers-reduced-motion` block all present.
 The dev server booted and served the restyled app.
 
 ### Try it yourself
@@ -238,22 +238,22 @@ Run the app (`./run.sh` + `npm run dev`) and open http://localhost:5173. You
 should see: the login card as frosted glass floating over a slowly drifting
 aurora; after logging in, a glass sidebar + top bar; smooth fade-and-rise when
 switching tabs; and fully readable text everywhere. Toggle "Reduce motion" in
-your OS accessibility settings and reload — the drift and transitions stop.
+your OS accessibility settings and reload the drift and transitions stop.
 
 ### React Bits integration (overhaul pass)
 
-Later we layered in **React Bits** — an open-source (MIT) catalog of animated
+Later we layered in **React Bits** an open-source (MIT) catalog of animated
 React components installed by *copying them in* (a shadcn-style registry), not as
 an npm package. We verified names against the live catalog and vendored the
 TypeScript+Tailwind variants under `src/components/reactbits/` (only edit: the
 `motion/react` import swapped to our `framer-motion`):
 
-- **Aurora** (Backgrounds) — a WebGL animated background, now *the* app-wide
+- **Aurora** (Backgrounds) a WebGL animated background, now *the* app-wide
   backdrop (rendered once in `Background.tsx`; needs `ogl`). Skipped under
   reduced-motion, falling back to the static CSS gradient.
-- **BlurText** (Text Animations) — the Login/Register titles blur-and-fade in
+- **BlurText** (Text Animations) the Login/Register titles blur-and-fade in
   word by word.
-- **CountUp** (Text Animations) — the Evaluation accuracy headline counts up
+- **CountUp** (Text Animations) the Evaluation accuracy headline counts up
   from 0 to its value (replaced our hand-rolled version).
 
 Everything else (glass primitive, tokens, badges, transparency panel) stayed —
@@ -284,11 +284,11 @@ two projects with different decisions each only ever retrieved their own.
 
 ---
 
-## 9b — Chat + Routing Transparency
+## 9b Chat + Routing Transparency
 
 ### What we built
 
-The Chat page — a message thread + input that calls `POST /chat` (the Phase 6
+The Chat page a message thread + input that calls `POST /chat` (the Phase 6
 routing graph), scoped to the selected project. **The whole point** is making
 the routing *visible*: every answer shows which memory type(s) the router picked
 as prominent animated **badges**, plus a **routing-transparency panel** with the
@@ -297,14 +297,14 @@ retrieved sources (and their scores) and the Phase 7 **token breakdown**
 
 ### New words used in this phase
 
-- **Message thread** — the running list of your questions + the assistant's
+- **Message thread** the running list of your questions + the assistant's
   answers, like any chat app.
-- **Badge** — a small pill label. Here, one per chosen memory type, each in that
+- **Badge** a small pill label. Here, one per chosen memory type, each in that
   type's own color.
-- **Routing transparency** — showing *why* an answer looks the way it does: what
+- **Routing transparency** showing *why* an answer looks the way it does: what
   memory was searched, what chunks came back and how well they matched (score),
   and how the token budget was spent.
-- **Context trace** — the Phase 7 "receipt" for one answer (kept vs. dropped
+- **Context trace** the Phase 7 "receipt" for one answer (kept vs. dropped
   chunks + token counts). We fetch it right after each answer.
 
 ### How it flows
@@ -320,16 +320,16 @@ retrieved sources (and their scores) and the Phase 7 **token breakdown**
 
 ### Design decisions (staying within the system)
 
-- **Each answer is one `GlassPanel`** — one `backdrop-filter` per answer. User
+- **Each answer is one `GlassPanel`** one `backdrop-filter` per answer. User
   messages are plain translucent bubbles (cheap), and the transparency details
-  inside the answer card use plain translucent sub-rows — so we never nest a
+  inside the answer card use plain translucent sub-rows so we never nest a
   blurred panel inside another (the guardrail).
-- **Badges are the loud part**, and they're cheap (no blur) — each tinted with
+- **Badges are the loud part**, and they're cheap (no blur) each tinted with
   its memory type's color and animated in with a tiny stagger, so the routing
   decision is the first thing your eye lands on.
 - Messages **rise + fade in**; a three-dot "routing & retrieving…" indicator
   shows while waiting. All motion respects reduced-motion.
-- New words / colors come from `lib/memoryTypes.ts` — one source of truth for
+- New words / colors come from `lib/memoryTypes.ts` one source of truth for
   each type's label + color + emoji, matching the `--mt-*` tokens.
 
 ### Files
@@ -350,7 +350,7 @@ We seeded the five memory types and drove the exact endpoints the page calls:
   4 sources, trace `total 767 / 1500`, 4 kept / 0 dropped.
 - "How do we deploy the backend?" → routed **`['workflow']`**, 3 sources.
 - "What does the slugify function do?" → routed **`['code']`**, and the trace
-  showed **2 kept / 2 dropped** — so the panel really does show chunks getting
+  showed **2 kept / 2 dropped** so the panel really does show chunks getting
   dropped when the budget is tight.
 
 Different questions → different badges → different sources: exactly the proof
@@ -363,20 +363,20 @@ Run the stack (`./run.sh` + `npm run dev`), seed some memories
 (`python demo/seed_phase6.py http://localhost:8010`), then on the Chat page ask
 the suggested questions. Watch the badge + sources change per answer, and expand
 the token breakdown to see kept vs. dropped. (Use a healthy
-`CONTEXT_TOKEN_BUDGET` ~1500 so answers are grounded — the Phase 8 lesson.)
+`CONTEXT_TOKEN_BUDGET` ~1500 so answers are grounded the Phase 8 lesson.)
 
 ---
 
-## 9c — Memories Browser + Upload
+## 9c Memories Browser + Upload
 
 ### What we built
 
 Two pages, plus one new backend endpoint:
 
-- **Upload** — a glass form to add a typed memory (`POST /memories`) and a
+- **Upload** a glass form to add a typed memory (`POST /memories`) and a
   second form to upload a plain-text document (`POST /documents/upload`). Success
   and error feedback are **inline glass toasts**, not browser alerts.
-- **Memories** — a responsive grid of memory cards, **filterable by type**, each
+- **Memories** a responsive grid of memory cards, **filterable by type**, each
   showing content + `source_ref` + `created_at`. Changing the filter **re-lays
   out the grid with Framer Motion layout animations** (cards glide/fade as they
   come and go).
@@ -385,14 +385,14 @@ Two pages, plus one new backend endpoint:
 
 ### New words used in this phase
 
-- **Toast** — a small, temporary notification that slides in (here, in glass)
+- **Toast** a small, temporary notification that slides in (here, in glass)
   and auto-dismisses. Friendlier than a blocking `alert()` popup.
-- **Layout animation** — Framer Motion watches an element's position/size and
+- **Layout animation** Framer Motion watches an element's position/size and
   animates it smoothly when it *changes* (e.g. cards reflowing when you filter).
   You opt in with the `layout` prop.
-- **`AnimatePresence`** — lets elements animate *out* when they're removed from
+- **`AnimatePresence`** lets elements animate *out* when they're removed from
   the list (not just in).
-- **Multipart / FormData** — how a browser uploads a file: the request body is
+- **Multipart / FormData** how a browser uploads a file: the request body is
   `FormData` with the file attached, and the browser sets the content type.
 
 ### The one design decision worth calling out
@@ -433,7 +433,7 @@ is there.
 
 ---
 
-## 9d — Evaluation Dashboard
+## 9d Evaluation Dashboard
 
 ### What we built
 
@@ -442,7 +442,7 @@ is there.
   a per-memory-type breakdown, and each question's expected-vs-predicted result.
   (The gold set moved to `backend/eval_data.py` so the CLI eval and this endpoint
   share **one** source of truth.)
-- **Frontend:** an Evaluation page that renders it in glass — overall accuracy as
+- **Frontend:** an Evaluation page that renders it in glass overall accuracy as
   an **animated count-up**, a **per-type breakdown with bars that grow** to their
   values, and a **table** of every question with mismatches **highlighted in the
   accent color**. The "Run evaluation" button shows a **glass shimmer** while it
@@ -450,12 +450,12 @@ is there.
 
 ### New words used in this phase
 
-- **On-demand endpoint** — work that runs only when you ask (a button press),
+- **On-demand endpoint** work that runs only when you ask (a button press),
   not on every page load. This one makes real LLM calls, so it's deliberately
   behind a button.
-- **Count-up animation** — a number that animates from 0 to its final value,
+- **Count-up animation** a number that animates from 0 to its final value,
   drawing the eye to the headline metric.
-- **Gold set** — the fixed list of questions with human-decided correct answers
+- **Gold set** the fixed list of questions with human-decided correct answers
   (from Phase 7). Accuracy = how many the router got right.
 
 ### Files
@@ -463,14 +463,14 @@ is there.
 | File | What it does |
 |---|---|
 | `backend/eval_data.py` | The shared gold set (used by CLI + endpoint) |
-| `backend/api/evaluation.py` | `POST /evaluation/run` — scores routing, returns JSON |
+| `backend/api/evaluation.py` | `POST /evaluation/run` scores routing, returns JSON |
 | `src/pages/EvaluationPage.tsx` | Count-up stat, per-type bars, mismatch table |
 | `demo/eval_phase7.py` | Refactored to import the shared gold set |
 
 ### How we verified it (live)
 
 `POST /evaluation/run` → 200, **accuracy 100% (10/10)**, every type 2/2, zero
-mismatches — returning exactly the shape the dashboard renders (a number for the
+mismatches returning exactly the shape the dashboard renders (a number for the
 count-up, `per_type` for the bars, `results` for the table). The build compiled
 cleanly and the page transformed with no errors.
 
@@ -478,6 +478,6 @@ cleanly and the page transformed with no errors.
 
 On **Evaluation**, click **Run evaluation**. After a few seconds (it makes one
 classifier call per question) the accuracy count-up animates in, the per-type
-bars grow, and the table fills — any misroute is highlighted. Switch
+bars grow, and the table fills any misroute is highlighted. Switch
 `CLASSIFIER_PROMPT_VERSION` to `v1` in `.env`, restart the backend, and re-run to
 compare prompt versions as a number.

@@ -9,7 +9,7 @@ settle, then prints a list of suggested questions to try against POST /chat —
 each aimed at a specific memory type, so you can watch the router pick it.
 
 Memories are project-scoped (Phase 9 enhancement), so every seeded entry is
-tagged with `project_id` (default 1) — pass a second argument to seed a
+tagged with `project_id` (default 1) pass a second argument to seed a
 different project, e.g. `python3 demo/seed_phase6.py http://localhost:8010 3`.
 
 Unlike demo_phase6.py (which asserts routing automatically), this script just
@@ -88,7 +88,7 @@ def main() -> None:
             )
             ready.append(bool(r.ok and r.json()["results"]))
         if all(ready):
-            print("All namespaces settled — ready to test.\n")
+            print("All namespaces settled ready to test.\n")
             break
         time.sleep(5)
     else:
@@ -105,7 +105,7 @@ def main() -> None:
 
     print("\nTip: to see the router's choice, look at \"memory_types\" in each response.")
     print("Or state a NEW fact (e.g. \"We decided to adopt trunk-based development.\")")
-    print("and check the \"memory_update\" field — the graph should save it.")
+    print("and check the \"memory_update\" field the graph should save it.")
 
 
 if __name__ == "__main__":

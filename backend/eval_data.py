@@ -1,4 +1,4 @@
-"""The routing-evaluation gold set — one source of truth.
+"""The routing-evaluation gold set one source of truth.
 
 A fixed list of hand-labeled (question -> expected memory type) pairs, 2 per
 type. Used by BOTH the CLI eval (demo/eval_phase7.py) and the on-demand eval

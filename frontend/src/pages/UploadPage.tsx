@@ -47,7 +47,7 @@ export default function UploadPage() {
     setUploading(true);
     try {
       const res = await api.uploadDocument(selectedProjectId, file);
-      push("success", `Uploaded “${res.source_filename}” — ${res.chunks_created} chunk(s) embedded.`);
+      push("success", `Uploaded “${res.source_filename}” ${res.chunks_created} chunk(s) embedded.`);
       setFile(null);
       if (fileInput.current) fileInput.current.value = "";
     } catch (err) {

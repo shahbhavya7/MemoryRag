@@ -1,11 +1,11 @@
-"""Phase 9d — run the routing-accuracy evaluation on demand, return JSON.
+"""Phase 9d run the routing-accuracy evaluation on demand, return JSON.
 
 POST /evaluation/run  ->  runs the Phase 7 gold set through the intent router
 and reports overall accuracy, a per-memory-type breakdown, and the per-question
 expected-vs-predicted results (so the UI can highlight mismatches).
 
 This makes real LLM classifier calls (one per gold question), so it takes a few
-seconds — it's an on-demand action behind a button, not something on page load.
+seconds it's an on-demand action behind a button, not something on page load.
 """
 
 from fastapi import APIRouter

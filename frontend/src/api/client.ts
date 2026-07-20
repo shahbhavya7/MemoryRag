@@ -1,7 +1,7 @@
 // A tiny fetch wrapper for the MemoryRAG backend.
 //
 // The JWT lives ONLY in memory (this module variable + React state that mirrors
-// it) — deliberately NOT localStorage for now, so a page refresh logs you out.
+// it) deliberately NOT localStorage for now, so a page refresh logs you out.
 // AuthContext calls setAuthToken() on login/logout; every request below then
 // attaches it as a Bearer token automatically.
 
@@ -60,7 +60,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       const data = await res.json();
       if (data?.detail) detail = typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail);
     } catch {
-      // response had no JSON body — keep the status text
+      // response had no JSON body keep the status text
     }
     throw new ApiError(res.status, detail);
   }
@@ -96,7 +96,7 @@ export const api = {
   // --- context trace (Phase 7) ---
   getContextTrace: (messageId: number) => request<ContextTrace>(`/context-trace/${messageId}`),
 
-  // --- memories (Phase 5 / 9c) — scoped to a project ---
+  // --- memories (Phase 5 / 9c) scoped to a project ---
   listMemories: (projectId: number, memoryType?: string) => {
     const params = new URLSearchParams({ project_id: String(projectId) });
     if (memoryType) params.set("memory_type", memoryType);

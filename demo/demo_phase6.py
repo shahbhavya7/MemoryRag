@@ -7,7 +7,7 @@ Requires the API running with PINECONE_API_KEY + LLM_PROVIDER/LLM_API_KEY set.
 
 The proof point of this phase is the ROUTING decision, not the final answer
 text. So this seeds one distinctive entry per memory type, then asks five
-questions — each clearly aimed at a different type — and prints which memory
+questions each clearly aimed at a different type and prints which memory
 type(s) the router chose for each. It asserts each question routed to its
 expected type.
 """
@@ -51,7 +51,7 @@ def seed() -> None:
 
 
 def wait_for_settle() -> None:
-    # Poll until EVERY namespace returns its seed — Pinecone serverless is
+    # Poll until EVERY namespace returns its seed Pinecone serverless is
     # eventually consistent and different namespaces can settle at different
     # times, so checking just one isn't enough.
     print("\nWaiting for all five vector namespaces to settle...")
@@ -102,13 +102,13 @@ def main() -> None:
     print("\n" + "=" * 72)
     print(f"Routed correctly on {passed}/{len(QUESTIONS)} questions.")
     if passed != len(QUESTIONS):
-        raise SystemExit("Some questions were misrouted — see above.")
+        raise SystemExit("Some questions were misrouted see above.")
     print("PASSED: every question was routed to its intended memory type.")
 
     # Bonus: prove the last node (memory_update) actually writes back when the
     # user STATES something new (as opposed to asking a question).
     print("\n" + "=" * 72)
-    print("BONUS — memory_update node: state a NEW decision and watch it get saved.")
+    print("BONUS memory_update node: state a NEW decision and watch it get saved.")
     print("=" * 72)
     statement = "We decided to adopt trunk-based development so we stop maintaining long-lived feature branches."
     r = requests.post(f"{BASE_URL}/chat", json={"project_id": 1, "message": statement})
@@ -117,9 +117,9 @@ def main() -> None:
     print(f"\nUser stated: {statement}")
     print(f"memory_update node result: {update}")
     if update.get("saved"):
-        print(f"SAVED to '{update.get('memory_type')}' memory (id={update.get('memory_id')}) — the graph learned a new fact.")
+        print(f"SAVED to '{update.get('memory_type')}' memory (id={update.get('memory_id')}) the graph learned a new fact.")
     else:
-        print("(Not saved — the model judged it not worth storing.)")
+        print("(Not saved the model judged it not worth storing.)")
 
 
 if __name__ == "__main__":

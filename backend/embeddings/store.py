@@ -71,7 +71,7 @@ def search(
     project_id: int | None = None,
 ) -> list[dict]:
     # When project_id is given, Pinecone only compares against vectors whose
-    # metadata matches — so one project's chat can't retrieve another's docs.
+    # metadata matches so one project's chat can't retrieve another's docs.
     query_filter = {"project_id": project_id} if project_id is not None else None
     result = _get_index().query(
         vector=query_embedding,

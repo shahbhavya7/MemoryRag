@@ -7,7 +7,7 @@ from backend.models.user import User
 from backend.utils.security import decode_access_token
 
 # auto_error=False so a missing header lets us raise 401 ourselves instead of
-# FastAPI's default 403 for "no credentials" — auth failures should all be 401.
+# FastAPI's default 403 for "no credentials" auth failures should all be 401.
 bearer_scheme = HTTPBearer(auto_error=False)
 
 

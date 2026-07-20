@@ -1,6 +1,6 @@
 // Protected layout: a glass sidebar + glass top bar over the animated
 // background. The content area itself is transparent (NOT glass) so each page's
-// GlassCards sit directly on the backdrop — never a blurred panel inside another
+// GlassCards sit directly on the backdrop never a blurred panel inside another
 // blurred panel (design guardrail: no nested backdrop-filter).
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";

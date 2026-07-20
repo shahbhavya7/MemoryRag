@@ -6,8 +6,8 @@ from backend.database.session import Base
 # The five memory types and the Pinecone namespace each one is stored in.
 # This list is the single source of truth for "what memory types exist."
 MEMORY_TYPE_DEFS = [
-    {"name": "document", "namespace": "document_memory", "description": "PDFs, docs, notes, wiki pages — general knowledge."},
-    {"name": "code", "namespace": "code_memory", "description": "Functions, classes, APIs, READMEs — understanding codebases."},
+    {"name": "document", "namespace": "document_memory", "description": "PDFs, docs, notes, wiki pages general knowledge."},
+    {"name": "code", "namespace": "code_memory", "description": "Functions, classes, APIs, READMEs understanding codebases."},
     {"name": "decision", "namespace": "decision_memory", "description": "Structured engineering decisions and their reasoning."},
     {"name": "workflow", "namespace": "workflow_memory", "description": "Business/engineering processes and step-by-step flows."},
     {"name": "conversation", "namespace": "conversation_memory", "description": "Important discussions worth remembering long-term."},
@@ -34,7 +34,7 @@ class Memory(Base):
     memory_type_id = Column(Integer, ForeignKey("memory_types.id"), nullable=False, index=True)
     content = Column(Text, nullable=False)
     source_ref = Column(String, nullable=True)
-    # Which Pinecone vector this row corresponds to — the relational link
+    # Which Pinecone vector this row corresponds to the relational link
     # between "what we stored" (Postgres) and "where its embedding lives" (Pinecone).
     vector_id = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

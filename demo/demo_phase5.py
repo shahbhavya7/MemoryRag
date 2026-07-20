@@ -5,11 +5,11 @@ Usage:
 
 Requires the API to be running (see README).
 
-The strong test isn't "search decision memory, get decisions back" — that
+The strong test isn't "search decision memory, get decisions back" that
 could just be labeling. The real test is: search ONE type's namespace using a
 query that semantically matches a DIFFERENT type's content, and confirm you
 STILL only ever get that one type's entries. If namespaces are really
-isolated, the other type's content simply isn't reachable there — even when
+isolated, the other type's content simply isn't reachable there even when
 it would have been the best match overall.
 
 This seeds its own known entries first (reusing seed_phase5's data), so it's
@@ -29,7 +29,7 @@ BASE_URL = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000"
 
 MEMORY_TYPES = list(SEED_ENTRIES.keys())
 
-# A query that clearly "belongs" to each type — phrased loosely, not quoting
+# A query that clearly "belongs" to each type phrased loosely, not quoting
 # the seeded text, so matching depends on meaning.
 PROBES = {
     "document": "what is the company travel and hotel policy",
@@ -109,7 +109,7 @@ def main() -> None:
         print(f"FAILED: {len(violations)} cross-type leak(s) detected: {violations}")
         raise SystemExit(1)
     print("PASSED: every namespace returned ONLY its own memory type across all "
-          f"{len(MEMORY_TYPES) ** 2} searches — the five memory types are truly isolated.")
+          f"{len(MEMORY_TYPES) ** 2} searches the five memory types are truly isolated.")
 
 
 if __name__ == "__main__":

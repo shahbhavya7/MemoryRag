@@ -1,10 +1,10 @@
-"""Phase 8 — ingest a real git history into Code Memory (and Decision Memory).
+"""Phase 8 ingest a real git history into Code Memory (and Decision Memory).
 
 Given a path to a local git repository, this walks the commit log, turns each
 commit (its message + a capped diff) into text, chunks it, embeds it, and
 stores it:
 
-  * always into **code memory** — so the codebase's history is searchable, and
+  * always into **code memory** so the codebase's history is searchable, and
   * additionally into **decision memory** when the commit message reads like it
     is explaining a *why* (e.g. "we switched to X because ...").
 
@@ -12,7 +12,7 @@ Every stored entry uses the commit hash as its ``source_ref`` in the
 ``memories`` table, so an answer can cite the exact commit(s) it came from.
 
 Reuses the shared ``store_memory`` writer (Phase 5) so each entry gets a
-Postgres row AND a Pinecone vector in the correct namespace — nothing new about
+Postgres row AND a Pinecone vector in the correct namespace nothing new about
 the storage path, only a new *source* of memories.
 
 Run as a CLI:
@@ -70,7 +70,7 @@ def _commit_diff_text(commit: "git.Commit") -> tuple[list[str], str]:
         # Compare against the first parent (normal case).
         diffs = commit.parents[0].diff(commit, create_patch=True)
     else:
-        # The very first commit has no parent — diff against the empty tree so
+        # The very first commit has no parent diff against the empty tree so
         # its initial files still show up.
         diffs = commit.diff(git.NULL_TREE, create_patch=True)
 
@@ -92,7 +92,7 @@ def _commit_diff_text(commit: "git.Commit") -> tuple[list[str], str]:
 
 
 def _commit_document(commit: "git.Commit", files: list[str], diff_text: str) -> str:
-    """Human-readable text for one commit — what actually gets embedded."""
+    """Human-readable text for one commit what actually gets embedded."""
     short = commit.hexsha[:8]
     date = commit.committed_datetime.strftime("%Y-%m-%d")
     message = commit.message.strip()

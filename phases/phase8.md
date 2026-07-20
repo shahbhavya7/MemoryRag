@@ -1,4 +1,4 @@
-# Phase 8 — Git Integration → Code Memory (Beginner Notes)
+# Phase 8 Git Integration → Code Memory (Beginner Notes)
 
 ## What are we even building in this phase?
 
@@ -17,27 +17,27 @@ repository, and it:
 4. If the commit message reads like it's explaining a *decision* ("we switched
    to X because…"), it **also** stores the message in **decision memory**.
 5. Records every entry in the `memories` table with `source_ref` set to the
-   **commit hash** — so any answer can cite the exact commit it came from.
+   **commit hash** so any answer can cite the exact commit it came from.
 
-Nothing about *storage* is new — we reuse the same `store_memory` writer from
+Nothing about *storage* is new we reuse the same `store_memory` writer from
 Phase 5. Phase 8 is a new **source** of memories, not a new storage path.
 
 ---
 
 ## 1. New words used in this phase
 
-- **Git commit** — one saved change in a repo's history. Has a unique **hash**
+- **Git commit** one saved change in a repo's history. Has a unique **hash**
   (like `135e7679…`), an author, a date, a **message**, and a **diff**.
-- **Diff** — the exact lines added/removed by a commit. This is where the real
+- **Diff** the exact lines added/removed by a commit. This is where the real
   "what changed" detail lives (the message is just a summary).
-- **Commit hash (SHA)** — the unique id of a commit. We use it as the
+- **Commit hash (SHA)** the unique id of a commit. We use it as the
   `source_ref`, so citations point at a specific commit you can `git show`.
-- **GitPython** — a Python library that lets us read a repo (commits, diffs,
+- **GitPython** a Python library that lets us read a repo (commits, diffs,
   branches) without shelling out to the `git` command.
-- **Parent commit** — the commit right before this one. A diff is "this commit
+- **Parent commit** the commit right before this one. A diff is "this commit
   vs. its parent." The very first commit has *no* parent, so we diff it against
   the **empty tree** instead.
-- **Ingestion** — the whole process of reading an external source (here, git)
+- **Ingestion** the whole process of reading an external source (here, git)
   and loading it into our memory system.
 
 ---
@@ -59,12 +59,12 @@ demo/
 
 Why a new `services/` package? The suggested folder structure in the project
 brief has one. It's the natural home for "a task the app performs" that isn't
-an HTTP route or a database model — like ingesting git history. The endpoint
+an HTTP route or a database model like ingesting git history. The endpoint
 (`api/ingest.py`) stays thin and just calls the service.
 
 ---
 
-## 3. `backend/services/git_ingest.py` — line by line
+## 3. `backend/services/git_ingest.py` line by line
 
 ### The knobs at the top
 
@@ -73,7 +73,7 @@ MAX_DIFF_CHARS = 6000
 ```
 Diffs can be *enormous* (a lockfile change can be tens of thousands of lines).
 Embedding megabytes of patch is slow and low-value, so we keep at most 6000
-characters of diff per commit — a readable, representative slice.
+characters of diff per commit a readable, representative slice.
 
 ```python
 WHY_MARKERS = ("because", "reason", "in order to", "so that", "to avoid",
@@ -82,7 +82,7 @@ WHY_MARKERS = ("because", "reason", "in order to", "so that", "to avoid",
 ```
 A cheap keyword list. If a commit message contains any of these, we treat it as
 explaining a *decision* and also file it under decision memory. It's a
-heuristic, not magic — the project's "future work" is to replace it with a real
+heuristic, not magic the project's "future work" is to replace it with a real
 classifier. (Note: it's a substring match, so a plain title like "Phase 6:
 Implement Adaptive Memory Routing" doesn't trip it, but "…because we need
 transactions" does.)
@@ -99,7 +99,7 @@ def _commit_diff_text(commit):
 - `create_patch=True` tells GitPython to include the actual patch text (the
   +/- lines), not just the list of changed files.
 - The `if commit.parents` branch handles the **first commit** specially: it has
-  no parent, so we diff against `git.NULL_TREE` (the empty tree) — otherwise its
+  no parent, so we diff against `git.NULL_TREE` (the empty tree) otherwise its
   files would never show up.
 
 ```python
@@ -152,8 +152,8 @@ specific branch).
 - We reuse the Phase 3 `chunk_text` to split a long commit document into
   ~500-word pieces (a big diff becomes 2–3 chunks). `or [document]` guards the
   edge case where chunking returns nothing.
-- Each chunk goes into **code memory** via the shared `store_memory` — which
-  gives it a Postgres row *and* a Pinecone vector — tagged with the commit hash.
+- Each chunk goes into **code memory** via the shared `store_memory` which
+  gives it a Postgres row *and* a Pinecone vector tagged with the commit hash.
 
 ```python
         if _looks_like_decision(commit.message):
@@ -162,7 +162,7 @@ specific branch).
                          source_ref=sha)
 ```
 "Why" commits *also* get their message stored in **decision memory**. We store
-the message (the reasoning), not the whole diff — a decision is about *why*, not
+the message (the reasoning), not the whole diff a decision is about *why*, not
 line-by-line *what*.
 
 The function returns a summary dict (counts + a per-commit list) so the CLI,
@@ -184,7 +184,7 @@ python -m backend.services.git_ingest . --max-commits 5
 
 ---
 
-## 4. `backend/api/ingest.py` — the HTTP twin
+## 4. `backend/api/ingest.py` the HTTP twin
 
 ```python
 @router.post("/git", response_model=GitIngestResponse)
@@ -205,14 +205,14 @@ New schemas in `backend/schemas.py`: `GitIngestRequest` (input),
 
 ---
 
-## 5. `demo/demo_phase8.py` — proving it end-to-end
+## 5. `demo/demo_phase8.py` proving it end-to-end
 
 1. `POST /ingest/git` for **this repo** and print what was ingested per commit.
 2. Ask a few "in the code history, what changed when…" questions via `/chat`.
 3. For each answer, print the **commit hash(es)** listed in the sources.
 
 The questions are phrased "in the code history…" so the router sends them to
-**code memory**, where the full diffs live — that's where the detail is.
+**code memory**, where the full diffs live that's where the detail is.
 
 ---
 
@@ -228,17 +228,17 @@ memory routing with LangGraph was added?"*:
 - **cited commit `135e7679`** (both its code and decision entries) as the top
   sources.
 
-Same for the multi-memory-split and embeddings questions — each cited the right
+Same for the multi-memory-split and embeddings questions each cited the right
 commit (`24608e30`, `8b991fcf`).
 
-### The one gotcha — token budget
+### The one gotcha token budget
 
 Git diff chunks are **large** (~800 tokens each), much bigger than the tiny
 hand-written memories from Phase 5. With a small `CONTEXT_TOKEN_BUDGET` (we hit
 this at budget `80`), a whole commit chunk can't fit the context slice, so it
 gets **dropped** and the answer falls back to "I don't know."
 
-That's not a Phase 8 bug — it's the **Phase 7 token budget working correctly**.
+That's not a Phase 8 bug it's the **Phase 7 token budget working correctly**.
 The fix is simply to run with a healthy budget (`1500`–`2000`) so a full commit
 fits. Lesson: **the size of your memories and the size of your budget have to
 match.**
@@ -248,13 +248,13 @@ match.**
 ## 7. What to remember going forward
 
 - **Real history is free training data.** Git already records what changed and
-  often why — ingesting it beats hand-writing memories.
-- **The commit hash is the perfect `source_ref`** — citations point at an exact,
+  often why ingesting it beats hand-writing memories.
+- **The commit hash is the perfect `source_ref`** citations point at an exact,
   verifiable commit you can `git show`.
 - **One source, two memories.** The same commit can be both a code fact (the
-  diff) and a decision (the "why") — routing later decides which one a question
+  diff) and a decision (the "why") routing later decides which one a question
   needs.
-- **Reuse the write path.** New source, same `store_memory` — no new storage
+- **Reuse the write path.** New source, same `store_memory` no new storage
   code, so vectors and rows stay consistent with every other memory.
 - **Big chunks need a big budget.** Match `CONTEXT_TOKEN_BUDGET` to the size of
   what you're storing, or the context builder will (correctly) drop it.

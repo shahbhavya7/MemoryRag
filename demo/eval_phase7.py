@@ -1,4 +1,4 @@
-"""Routing-accuracy evaluation — the project's first real retrieval-quality metric.
+"""Routing-accuracy evaluation the project's first real retrieval-quality metric.
 
 Usage:
     python3 demo/eval_phase7.py
@@ -6,9 +6,9 @@ Usage:
 Runs a fixed set of hand-written (question -> expected memory type) pairs
 through the intent router and reports accuracy. It evaluates BOTH classifier
 prompt versions (v1 and v2) so you can see, as a number, whether a prompt
-change actually helped — instead of eyeballing a few examples ("vibe check").
+change actually helped instead of eyeballing a few examples ("vibe check").
 
-This calls the router directly (no server, no Pinecone/Postgres writes) — it
+This calls the router directly (no server, no Pinecone/Postgres writes) it
 only needs LLM_API_KEY set. Run it from the repo root with the env loaded:
     set -a; source .env; set +a
     python3 demo/eval_phase7.py
@@ -49,7 +49,7 @@ def main() -> None:
     print(f"v1 accuracy: {acc_v1:.0%}")
     print(f"v2 accuracy: {acc_v2:.0%}")
     if acc_v2 > acc_v1:
-        print("v2 beats v1 — the prompt change measurably improved routing.")
+        print("v2 beats v1 the prompt change measurably improved routing.")
     elif acc_v2 == acc_v1:
         print("v1 and v2 tied on this set.")
     else:

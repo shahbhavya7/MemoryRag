@@ -1,5 +1,5 @@
 // Evaluation dashboard (Phase 9d): run the routing-accuracy eval on demand
-// (POST /evaluation/run) and render it in glass — an animated count-up for
+// (POST /evaluation/run) and render it in glass an animated count-up for
 // overall accuracy, per-type bars that grow to their value, and a table of
 // expected-vs-predicted with mismatches highlighted.
 

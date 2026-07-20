@@ -1,4 +1,4 @@
-// Vendored from React Bits (https://reactbits.dev) — MIT License,
+// Vendored from React Bits (https://reactbits.dev) MIT License,
 // (c) David Haz. Copied per the library's copy-in install model.
 // Import swapped: 'motion/react' -> 'framer-motion' (same library).
 import { useEffect, useRef } from 'react';

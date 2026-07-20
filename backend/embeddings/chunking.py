@@ -1,6 +1,6 @@
 def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
     # Word count is used as a simple stand-in for token count, so this stays
-    # dependency-light — good enough for chunking, not an exact token budget.
+    # dependency-light good enough for chunking, not an exact token budget.
     words = text.split()
     if not words:
         return []

@@ -45,7 +45,7 @@ together and exchange tail-glow greetings.
 """
 
 # A second, unrelated made-up topic. With only one document in the store,
-# every search would trivially "win" — this distractor lets us prove the
+# every search would trivially "win" this distractor lets us prove the
 # search actually ranks the relevant chunk above an irrelevant one, instead
 # of just returning whatever happens to exist.
 DISTRACTOR_TEXT = """
@@ -60,7 +60,7 @@ touching the canyon floor.
 
 QUERIES = [
     "What color do Glimmerwood squirrel tails glow?",
-    # A paraphrase, not a quote — no shared keywords with "driftnest" or
+    # A paraphrase, not a quote no shared keywords with "driftnest" or
     # "moss and spider silk" in the source text, so a keyword search would
     # likely miss it, but a semantic search should still find it.
     "How do these squirrels build their homes without using twigs?",
@@ -79,7 +79,7 @@ def wait_for_index_to_settle(max_wait_seconds: int = 60, poll_interval_seconds: 
     # Pinecone serverless is eventually consistent: right after the very
     # first upserts into a fresh namespace, similarity ranking can be
     # temporarily wrong (not just "missing" the new vectors, but genuinely
-    # mis-ordered) until the index finishes settling — this has been
+    # mis-ordered) until the index finishes settling this has been
     # observed taking up to about a minute. A fixed short sleep isn't
     # reliable, so instead we poll a known query until its expected top
     # match shows up, and give up gracefully if it takes unusually long.
@@ -91,11 +91,11 @@ def wait_for_index_to_settle(max_wait_seconds: int = 60, poll_interval_seconds: 
         result.raise_for_status()
         top_project = result.json()["results"][0]["metadata"]["project_id"]
         if top_project == 1:
-            print("Index looks settled — proceeding with the real queries.")
+            print("Index looks settled proceeding with the real queries.")
             return
         time.sleep(poll_interval_seconds)
 
-    print(f"Index didn't settle within {max_wait_seconds}s — proceeding anyway; results below may be affected.")
+    print(f"Index didn't settle within {max_wait_seconds}s proceeding anyway; results below may be affected.")
 
 
 def main() -> None:
@@ -131,7 +131,7 @@ def main() -> None:
         )
 
     print(
-        "\nAll Phase 3 embedding + semantic search checks completed successfully — "
+        "\nAll Phase 3 embedding + semantic search checks completed successfully "
         "every query correctly ranked the relevant squirrel chunk above the unrelated kite-tournament chunk."
     )
 

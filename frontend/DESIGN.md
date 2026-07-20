@@ -1,8 +1,8 @@
-# MemoryRAG — Liquid-Glass Design System
+# MemoryRAG Liquid-Glass Design System
 
 A small, strict design system so every screen looks like one cohesive glass UI
 floating over an animated backdrop. **One primitive, one set of values, used
-everywhere.** If you're adding UI, use these — don't invent one-off styles.
+everywhere.** If you're adding UI, use these don't invent one-off styles.
 
 The source of truth is [`src/index.css`](src/index.css) (tokens + the `.glass`
 primitive) and [`src/components/GlassPanel.tsx`](src/components/GlassPanel.tsx)
@@ -19,17 +19,17 @@ Defined as CSS variables in `:root` and mirrored into Tailwind's theme
 
 | Token | Value | Use |
 |---|---|---|
-| `--bg-base` | `#0a0711` | Page background base — near-black with a violet cast |
-| `--fg` | `#f4f2f8` | **Body text** — warm near-white, high contrast. Never gray body text on glass. |
+| `--bg-base` | `#0a0711` | Page background base near-black with a violet cast |
+| `--fg` | `#f4f2f8` | **Body text** warm near-white, high contrast. Never gray body text on glass. |
 | `--fg-muted` | `#c7c3d4` | Secondary labels only (still AA on our dark glass) |
 | `--fg-faint` | `#8b8598` | Decorative text only, never body copy |
-| `--accent` | `#a855f7` | **Primary** accent (violet) — interactive/active states |
-| `--accent-2` | `#7c3aed` | **Secondary** accent (deep violet) — the far end of the gradient |
+| `--accent` | `#a855f7` | **Primary** accent (violet) interactive/active states |
+| `--accent-2` | `#7c3aed` | **Secondary** accent (deep violet) the far end of the gradient |
 | `--danger` / `--ok` | `#fb7185` / `#34d399` | Error / success |
 
 **The identity is a violet gradient on true black.** Primary buttons, the
 wordmark, and the aurora run light violet (`#a855f7`) into deep violet
-(`#7c3aed`)/indigo. Two accents total — the glass + background do the heavy
+(`#7c3aed`)/indigo. Two accents total the glass + background do the heavy
 lifting; accents are punctuation (active nav pill, focus ring, primary button,
 wordmark, one badge tint).
 
@@ -39,7 +39,7 @@ wordmark, one badge tint).
 `--mt-workflow #a78bfa` · `--mt-conversation #f472b6`
 
 Each is used as a *tint* on a glass badge (10–18% fill + colored text/border),
-not a solid fill — so badges stay within the glass language.
+not a solid fill so badges stay within the glass language.
 
 ### Shape & type
 
@@ -70,12 +70,12 @@ The **only** place `backdrop-filter` is defined. Every panel gets it via the
 
 Why a **dark** translucent body rather than pure white-over-dark? Contrast. A
 dark (blue-black) base guarantees near-white text stays readable no matter what
-bright part of the aurora is behind it — while the diagonal sheen + inset
+bright part of the aurora is behind it while the diagonal sheen + inset
 highlight still give the frosted-glass look.
 
 **What keeps it from looking generic (the signature):**
 - The sheen and hairline are **cool-tinted** (cyan → faint blue), not plain
-  white — the glass reads as "our glass," not a stock frosted panel.
+  white the glass reads as "our glass," not a stock frosted panel.
 - A two-part inset shadow fakes a **specular edge**: a bright light top edge
   plus a faint cyan rim light around the whole panel.
 - The background carries a fine **grain overlay** (SVG noise, ~5% opacity, blend
@@ -94,17 +94,17 @@ extra contrast insurance.
    (worst case ≈ near-white on a dark-violet mid-tone: high contrast). Muted
    text is only for secondary labels. **No gray body text on glass.**
 2. **Blur is expensive → few, large panels only.** `backdrop-filter` lives on
-   the sidebar, top bar, and page cards — not on buttons, badges, inputs, or
+   the sidebar, top bar, and page cards not on buttons, badges, inputs, or
    list rows (those use plain translucent fills). **No nested blur:** the
    content area between the glass shell and the page cards is transparent, so a
    glass card never sits inside another glass panel.
 3. **Motion with restraint (Framer Motion).** Route transitions (fade + slight
    rise), panel mount (subtle opacity/scale/rise), hover micro-lifts. Durations
    **150–400ms**, gentle easing (`[0.22,1,0.36,1]`). No bounce, no infinite
-   attention loops — the **only** infinite animation is the slow ambient
+   attention loops the **only** infinite animation is the slow ambient
    background drift. All of it is disabled under `prefers-reduced-motion`.
 4. **Consistency.** Every surface = the same `.glass` values (radius, blur,
-   border, shadow). Reuse `<GlassPanel>` / `<GlassCard>` — no bespoke panels.
+   border, shadow). Reuse `<GlassPanel>` / `<GlassCard>` no bespoke panels.
 5. **Graceful fallback.** `@supports not (backdrop-filter…)` raises the panel to
    a near-opaque solid so it degrades to readable instead of transparent-mush.
 
@@ -112,7 +112,7 @@ extra contrast insurance.
 
 ## 4. The animated background
 
-Rendered **once** at the app root (`<Background/>` in `App.tsx`) — the single
+Rendered **once** at the app root (`<Background/>` in `App.tsx`) the single
 heavy animated background for the whole app (performance guardrail). It's a
 `position: fixed` layer (`.bg-aurora`, z-index -1) composed of:
 
@@ -125,7 +125,7 @@ heavy animated background for the whole app (performance guardrail). It's a
 The CSS base doubles as the **reduced-motion fallback**: under
 `prefers-reduced-motion` we skip the animated WebGL layer entirely and show only
 the static gradient. The Aurora canvas's animation is the one allowed ambient
-loop; the panels' `backdrop-filter` blurs *this* background — that's what gives
+loop; the panels' `backdrop-filter` blurs *this* background that's what gives
 the glass something to refract.
 
 ---
@@ -142,8 +142,8 @@ this app (same library).
 | Component | Category | Where it's used | Extra dep |
 |---|---|---|---|
 | **Aurora** | Backgrounds | The app-wide animated background (`Background.tsx`) | `ogl` |
-| **BlurText** | Text Animations | Login/Register titles (words blur-fade in) | — (framer-motion) |
-| **CountUp** | Text Animations | Evaluation page — the accuracy headline animates 0→value | — (framer-motion) |
+| **BlurText** | Text Animations | Login/Register titles (words blur-fade in) | (framer-motion) |
+| **CountUp** | Text Animations | Evaluation page the accuracy headline animates 0→value | (framer-motion) |
 
 ---
 
@@ -164,5 +164,5 @@ import { GlassPanel, GlassCard } from "./components/GlassPanel";
 Framer-Motion / div props. `<GlassCard>` is just `<GlassPanel>` with `p-5`.
 
 **Rule of thumb:** if it's a surface, it's a `GlassPanel`. If it's inside a
-surface, it's plain translucent (`bg-white/6`, a hairline border) — never
+surface, it's plain translucent (`bg-white/6`, a hairline border) never
 another blurred panel.

@@ -11,7 +11,7 @@ SYSTEM_PROMPT_TEXT = (
     "You are a helpful assistant for the MemoryRAG project. "
     "Answer the user's question using ONLY the context below. "
     "If the answer is not in the context, say you don't know based on the "
-    "available documents — do not make anything up."
+    "available documents do not make anything up."
 )
 
 _PROMPT = ChatPromptTemplate.from_messages(

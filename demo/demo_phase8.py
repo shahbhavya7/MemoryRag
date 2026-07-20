@@ -1,10 +1,10 @@
-"""Phase 8 demo — ingest THIS project's own git history, then ask about it.
+"""Phase 8 demo ingest THIS project's own git history, then ask about it.
 
 What it proves: real commits become searchable Code Memory (and Decision Memory
 for "why" commits), and a chat answer can cite the exact commit hash(es) it drew
 from.
 
-Usage (API must be running — see README):
+Usage (API must be running see README):
     python3 demo/demo_phase8.py [base_url]
 
 Steps:
@@ -52,7 +52,7 @@ def ingest() -> dict:
 
 
 def ask(question: str) -> None:
-    # Retry once — Pinecone is eventually consistent right after an upsert.
+    # Retry once Pinecone is eventually consistent right after an upsert.
     for attempt in range(2):
         resp = requests.post(
             f"{BASE_URL}/chat",

@@ -7,7 +7,7 @@ class Message(Base):
     __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True, index=True)
-    # project_id is a logical grouping key, not a hard foreign key — this
+    # project_id is a logical grouping key, not a hard foreign key this
     # matches how /documents/upload already treats project_id (a free-form tag
     # stored as vector metadata). Keeping it FK-free means /chat can log an
     # exchange for any project id without first requiring a real project row,

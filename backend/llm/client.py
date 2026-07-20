@@ -3,7 +3,7 @@ import os
 from langchain_openai import ChatOpenAI
 
 # Both Groq and OpenRouter expose OpenAI-compatible APIs, so one ChatOpenAI
-# client works for either — we just point it at a different base URL and
+# client works for either we just point it at a different base URL and
 # supply the matching API key. Add more OpenAI-compatible providers here.
 PROVIDER_BASE_URLS = {
     "groq": "https://api.groq.com/openai/v1",
@@ -30,5 +30,5 @@ def get_llm() -> ChatOpenAI:
         raise ValueError("LLM_API_KEY is not set. Add it to your .env (see .env.example).")
 
     # temperature=0 keeps answers as deterministic/grounded as possible, which
-    # is what we want for RAG — creativity here just means more hallucination.
+    # is what we want for RAG creativity here just means more hallucination.
     return ChatOpenAI(model=model, api_key=api_key, base_url=base_url, temperature=0)
